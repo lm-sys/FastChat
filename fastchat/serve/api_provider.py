@@ -23,9 +23,10 @@ def get_api_provider_stream_iter(
     top_p,
     max_new_tokens,
     state,
+    extra_body=None,
 ):
     if model_api_dict["api_type"] == "openai":
-        if model_api_dict["vision-arena"]:
+        if model_api_dict.get("vision-arena", False):
             prompt = conv.to_openai_vision_api_messages()
         else:
             prompt = conv.to_openai_api_messages()
@@ -38,6 +39,30 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "openai_no_stream":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            stream=False,
+        )
+    elif model_api_dict["api_type"] == "openai_o1":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = openai_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            is_o1=True,
+        )
     elif model_api_dict["api_type"] == "openai_assistant":
         last_prompt = conv.messages[-2][1]
         stream_iter = openai_assistant_api_stream_iter(
@@ -47,7 +72,7 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "anthropic":
-        if model_api_dict["vision-arena"]:
+        if model_api_dict.get("vision-arena", False):
             prompt = conv.to_anthropic_vision_api_messages()
         else:
             prompt = conv.to_openai_api_messages()
@@ -55,15 +80,15 @@ def get_api_provider_stream_iter(
             model_name, prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "anthropic_message":
-        if model_api_dict["vision-arena"]:
+        if model_api_dict.get("vision-arena", False):
             prompt = conv.to_anthropic_vision_api_messages()
         else:
             prompt = conv.to_openai_api_messages()
         stream_iter = anthropic_message_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
+            model_api_dict["model_name"], prompt, temperature, top_p, max_new_tokens
         )
     elif model_api_dict["api_type"] == "anthropic_message_vertex":
-        if model_api_dict["vision-arena"]:
+        if model_api_dict.get("vision-arena", False):
             prompt = conv.to_anthropic_vision_api_messages()
         else:
             prompt = conv.to_openai_api_messages()
@@ -85,19 +110,40 @@ def get_api_provider_stream_iter(
             max_new_tokens,
             api_key=model_api_dict["api_key"],
         )
-    elif model_api_dict["api_type"] == "bard":
-        prompt = conv.to_openai_api_messages()
-        stream_iter = bard_api_stream_iter(
+    elif model_api_dict["api_type"] == "gemini_no_stream":
+        prompt = conv.to_gemini_api_messages()
+        stream_iter = gemini_api_stream_iter(
             model_api_dict["model_name"],
             prompt,
             temperature,
             top_p,
+            max_new_tokens,
             api_key=model_api_dict["api_key"],
+            use_stream=False,
+        )
+    elif model_api_dict["api_type"] == "bard":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = gemini_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            None,  # use Bard's default temperature
+            None,  # use Bard's default top_p
+            max_new_tokens,
+            api_key=(model_api_dict["api_key"] or os.environ["BARD_API_KEY"]),
+            use_stream=False,
         )
     elif model_api_dict["api_type"] == "mistral":
-        prompt = conv.to_openai_api_messages()
+        if model_api_dict.get("vision-arena", False):
+            prompt = conv.to_openai_vision_api_messages(is_mistral=True)
+        else:
+            prompt = conv.to_openai_api_messages()
         stream_iter = mistral_api_stream_iter(
-            model_name, prompt, temperature, top_p, max_new_tokens
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_key=model_api_dict.get("api_key"),
         )
     elif model_api_dict["api_type"] == "nvidia":
         prompt = conv.to_openai_api_messages()
@@ -108,6 +154,7 @@ def get_api_provider_stream_iter(
             top_p,
             max_new_tokens,
             model_api_dict["api_base"],
+            model_api_dict["api_key"],
         )
     elif model_api_dict["api_type"] == "ai2":
         prompt = conv.to_openai_api_messages()
@@ -174,6 +221,44 @@ def get_api_provider_stream_iter(
             api_base=model_api_dict["api_base"],
             api_key=model_api_dict["api_key"],
         )
+    elif model_api_dict["api_type"] == "column":
+        if model_api_dict.get("vision-arena", False):
+            prompt = conv.to_openai_vision_api_messages()
+        else:
+            prompt = conv.to_openai_api_messages()
+        stream_iter = column_api_stream_iter(
+            model_name=model_api_dict["model_name"],
+            messages=prompt,
+            temperature=temperature,
+            top_p=top_p,
+            max_new_tokens=max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+        )
+    elif model_api_dict["api_type"] == "metagen":
+        prompt = conv.to_metagen_api_messages()
+        stream_iter = metagen_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            conversation_id=state.conv_id,
+        )
+    elif model_api_dict["api_type"] == "p2l":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = p2l_api_stream_iter(
+            model_api_dict["model_name"],
+            prompt,
+            temperature,
+            top_p,
+            max_new_tokens,
+            api_base=model_api_dict["api_base"],
+            api_key=model_api_dict["api_key"],
+            extra_body=extra_body,
+        )
     else:
         raise NotImplementedError()
 
@@ -188,6 +273,8 @@ def openai_api_stream_iter(
     max_new_tokens,
     api_base=None,
     api_key=None,
+    stream=True,
+    is_o1=False,
 ):
     import openai
 
@@ -228,21 +315,181 @@ def openai_api_stream_iter(
     }
     logger.info(f"==== request ====\n{gen_params}")
 
+    if stream and not is_o1:
+        res = client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_new_tokens,
+            stream=True,
+        )
+        text = ""
+        for chunk in res:
+            if len(chunk.choices) > 0:
+                text += chunk.choices[0].delta.content or ""
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                }
+                yield data
+    else:
+        if is_o1:
+            res = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=1.0,
+                stream=False,
+            )
+        else:
+            res = client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_new_tokens,
+                stream=False,
+            )
+        text = res.choices[0].message.content
+        pos = 0
+        while pos < len(text):
+            # simulate token streaming
+            pos += 2
+            time.sleep(0.001)
+            data = {
+                "text": text[:pos],
+                "error_code": 0,
+            }
+            yield data
+
+
+def column_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_base=None,
+    api_key=None,
+):
+    try:
+        messages_no_img = []
+        for msg in messages:
+            msg_no_img = msg.copy()
+            msg_no_img.pop("attachment", None)
+            messages_no_img.append(msg_no_img)
+
+        gen_params = {
+            "model": model_name,
+            "messages": messages_no_img,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_new_tokens": max_new_tokens,
+            "seed": 42,
+        }
+        logger.info(f"==== request ====\n{gen_params}")
+
+        gen_params["messages"] = messages
+        gen_params["stream"] = True
+
+        # payload.pop("model")
+
+        # try 3 times
+        for i in range(3):
+            try:
+                response = requests.post(
+                    api_base, json=gen_params, stream=True, timeout=30
+                )
+                break
+            except Exception as e:
+                logger.error(f"==== error ====\n{e}")
+                if i == 2:
+                    yield {
+                        "text": f"**API REQUEST ERROR** Reason: API timeout. please try again later.",
+                        "error_code": 1,
+                    }
+                    return
+
+        text = ""
+        for line in response.iter_lines():
+            if line:
+                data = line.decode("utf-8")
+                if data.startswith("data:"):
+                    data = json.loads(data[6:])["message"]
+                    text += data
+                    yield {"text": text, "error_code": 0}
+
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
+        yield {
+            "text": f"**API REQUEST ERROR** Reason: Unknown.",
+            "error_code": 1,
+        }
+
+
+def p2l_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_base=None,
+    api_key=None,
+    extra_body=None,
+):
+    import openai
+
+    client = openai.OpenAI(
+        base_url=api_base,
+        api_key=api_key or "-",
+        timeout=180,
+    )
+
+    # Make requests for logging
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
+
+    gen_params = {
+        "model": model_name,
+        "prompt": text_messages,
+        "temperature": None,
+        "top_p": None,
+        "max_new_tokens": max_new_tokens,
+        "extra_body": extra_body,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
     res = client.chat.completions.create(
         model=model_name,
         messages=messages,
-        temperature=temperature,
         max_tokens=max_new_tokens,
         stream=True,
+        extra_body=extra_body,
     )
     text = ""
-    for chunk in res:
+    for chunk_idx, chunk in enumerate(res):
         if len(chunk.choices) > 0:
             text += chunk.choices[0].delta.content or ""
+
             data = {
                 "text": text,
                 "error_code": 0,
             }
+
+            if chunk_idx == 0:
+                if hasattr(chunk.choices[0].delta, "model"):
+                    data["ans_model"] = chunk.choices[0].delta.model
+
+                if hasattr(chunk, "router_outputs"):
+                    data["router_outputs"] = chunk.router_outputs
+
             yield data
 
 
@@ -311,6 +558,7 @@ def openai_assistant_api_stream_iter(
     offset_idx = 0
     full_ret_text = ""
     idx_mapping = {}
+    cur_offset = 0
     for line in res.iter_lines():
         if not line:
             continue
@@ -353,14 +601,17 @@ def openai_assistant_api_stream_iter(
                 if "annotations" in content and len(content["annotations"]) > 0:
                     annotations = content["annotations"]
 
-                    cur_offset = 0
-                    raw_text_copy = raw_text
+                    raw_text_copy = text
                     for anno in annotations:
                         if anno["type"] == "url_citation":
-                            anno_text = anno["text"]
-                            if anno_text not in idx_mapping:
-                                continue
-                            citation_number = idx_mapping[anno_text]
+                            pattern = r"【\d+†source】"
+                            matches = re.findall(pattern, content["value"])
+                            if len(matches) > 0:
+                                for match in matches:
+                                    print(match)
+                                    if match not in idx_mapping:
+                                        idx_mapping[match] = len(idx_mapping) + 1
+                                    citation_number = idx_mapping[match]
 
                             start_idx = anno["start_index"] + cur_offset
                             end_idx = anno["end_index"] + cur_offset
@@ -383,26 +634,11 @@ def openai_assistant_api_stream_iter(
                     text = raw_text_copy
                 else:
                     text_content = content["value"]
-                    raw_text += text_content
-
-                    # re-index citation number
-                    pattern = r"【\d+】"
-                    matches = re.findall(pattern, content["value"])
-                    if len(matches) > 0:
-                        for match in matches:
-                            if match not in idx_mapping:
-                                idx_mapping[match] = len(idx_mapping) + 1
-                            citation_number = idx_mapping[match]
-                            text_content = text_content.replace(
-                                match, f" [{citation_number}]"
-                            )
                     text += text_content
-                    # yield {"text": text, "error_code": 0}
             elif delta["type"] == "image_file":
                 image_public_url = upload_openai_file_to_gcs(
                     delta["image_file"]["file_id"]
                 )
-                # raw_text += f"![image]({image_public_url})"
                 text += f"![image]({image_public_url})"
 
             list_of_text[text_index] = text
@@ -518,7 +754,13 @@ def anthropic_message_api_stream_iter(
 
 
 def gemini_api_stream_iter(
-    model_name, messages, temperature, top_p, max_new_tokens, api_key=None
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_key=None,
+    use_stream=True,
 ):
     import google.generativeai as genai  # pip install google-generativeai
 
@@ -560,93 +802,45 @@ def gemini_api_stream_iter(
         safety_settings=safety_settings,
     )
     convo = model.start_chat(history=history)
-    response = convo.send_message(messages[-1]["content"], stream=True)
 
-    try:
-        text = ""
-        for chunk in response:
-            text += chunk.candidates[0].content.parts[0].text
-            data = {
-                "text": text,
-                "error_code": 0,
+    if use_stream:
+        response = convo.send_message(messages[-1]["content"], stream=True)
+        try:
+            text = ""
+            for chunk in response:
+                text += chunk.candidates[0].content.parts[0].text
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                }
+                yield data
+        except Exception as e:
+            logger.error(f"==== error ====\n{e}")
+            reason = chunk.candidates
+            yield {
+                "text": f"**API REQUEST ERROR** Reason: {reason}.",
+                "error_code": 1,
             }
-            yield data
-    except Exception as e:
-        logger.error(f"==== error ====\n{e}")
-        reason = chunk.candidates
-        yield {
-            "text": f"**API REQUEST ERROR** Reason: {reason}.",
-            "error_code": 1,
-        }
-
-
-def bard_api_stream_iter(model_name, conv, temperature, top_p, api_key=None):
-    del top_p  # not supported
-    del temperature  # not supported
-
-    if api_key is None:
-        api_key = os.environ["BARD_API_KEY"]
-
-    # convert conv to conv_bard
-    conv_bard = []
-    for turn in conv:
-        if turn["role"] == "user":
-            conv_bard.append({"author": "0", "content": turn["content"]})
-        elif turn["role"] == "assistant":
-            conv_bard.append({"author": "1", "content": turn["content"]})
-        else:
-            raise ValueError(f"Unsupported role: {turn['role']}")
-
-    params = {
-        "model": model_name,
-        "prompt": conv_bard,
-    }
-    logger.info(f"==== request ====\n{params}")
-
-    try:
-        res = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta2/models/{model_name}:generateMessage?key={api_key}",
-            json={
-                "prompt": {
-                    "messages": conv_bard,
-                },
-            },
-            timeout=30,
-        )
-    except Exception as e:
-        logger.error(f"==== error ====\n{e}")
-        yield {
-            "text": f"**API REQUEST ERROR** Reason: {e}.",
-            "error_code": 1,
-        }
-
-    if res.status_code != 200:
-        logger.error(f"==== error ==== ({res.status_code}): {res.text}")
-        yield {
-            "text": f"**API REQUEST ERROR** Reason: status code {res.status_code}.",
-            "error_code": 1,
-        }
-
-    response_json = res.json()
-    if "candidates" not in response_json:
-        logger.error(f"==== error ==== response blocked: {response_json}")
-        reason = response_json["filters"][0]["reason"]
-        yield {
-            "text": f"**API REQUEST ERROR** Reason: {reason}.",
-            "error_code": 1,
-        }
-
-    response = response_json["candidates"][0]["content"]
-    pos = 0
-    while pos < len(response):
-        # simulate token streaming
-        pos += random.randint(3, 6)
-        time.sleep(0.002)
-        data = {
-            "text": response[:pos],
-            "error_code": 0,
-        }
-        yield data
+    else:
+        try:
+            response = convo.send_message(messages[-1]["content"], stream=False)
+            text = response.candidates[0].content.parts[0].text
+            pos = 0
+            while pos < len(text):
+                # simulate token streaming
+                pos += 5
+                time.sleep(0.001)
+                data = {
+                    "text": text[:pos],
+                    "error_code": 0,
+                }
+                yield data
+        except Exception as e:
+            logger.error(f"==== error ====\n{e}")
+            yield {
+                "text": f"**API REQUEST ERROR** Reason: {e}.",
+                "error_code": 1,
+            }
 
 
 def ai2_api_stream_iter(
@@ -722,41 +916,58 @@ def ai2_api_stream_iter(
             yield data
 
 
-def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_tokens):
-    from mistralai.client import MistralClient
-    from mistralai.models.chat_completion import ChatMessage
+def mistral_api_stream_iter(
+    model_name, messages, temperature, top_p, max_new_tokens, api_key=None
+):
+    # from mistralai.client import MistralClient
+    # from mistralai.models.chat_completion import ChatMessage
+    from mistralai import Mistral
 
-    api_key = os.environ["MISTRAL_API_KEY"]
+    if api_key is None:
+        api_key = os.environ["MISTRAL_API_KEY"]
 
-    client = MistralClient(api_key=api_key, timeout=5)
+    client = Mistral(api_key=api_key)
+
+    # Make requests for logging
+    text_messages = []
+    for message in messages:
+        if type(message["content"]) == str:  # text-only model
+            text_messages.append(message)
+        else:  # vision model
+            filtered_content_list = [
+                content for content in message["content"] if content["type"] == "text"
+            ]
+            text_messages.append(
+                {"role": message["role"], "content": filtered_content_list}
+            )
 
     # Make requests
     gen_params = {
         "model": model_name,
-        "prompt": messages,
+        "prompt": text_messages,
         "temperature": temperature,
         "top_p": top_p,
         "max_new_tokens": max_new_tokens,
     }
     logger.info(f"==== request ====\n{gen_params}")
 
-    new_messages = [
-        ChatMessage(role=message["role"], content=message["content"])
-        for message in messages
-    ]
+    # new_messages = [
+    #     ChatMessage(role=message["role"], content=message["content"])
+    #     for message in messages
+    # ]
 
-    res = client.chat_stream(
+    res = client.chat.stream(
         model=model_name,
         temperature=temperature,
-        messages=new_messages,
+        messages=messages,
         max_tokens=max_new_tokens,
         top_p=top_p,
     )
 
     text = ""
     for chunk in res:
-        if chunk.choices[0].delta.content is not None:
-            text += chunk.choices[0].delta.content
+        if chunk.data.choices[0].delta.content is not None:
+            text += chunk.data.choices[0].delta.content
             data = {
                 "text": text,
                 "error_code": 0,
@@ -764,8 +975,15 @@ def mistral_api_stream_iter(model_name, messages, temperature, top_p, max_new_to
             yield data
 
 
-def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_base):
-    api_key = os.environ["NVIDIA_API_KEY"]
+def nvidia_api_stream_iter(
+    model_name, messages, temp, top_p, max_tokens, api_base, api_key=None
+):
+    model_2_api = {
+        "nemotron-4-340b": "/b0fcd392-e905-4ab4-8eb9-aeae95c30b37",
+    }
+    api_base += model_2_api[model_name]
+
+    api_key = api_key or os.environ["NVIDIA_API_KEY"]
     headers = {
         "Authorization": f"Bearer {api_key}",
         "accept": "text/event-stream",
@@ -776,6 +994,7 @@ def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_ba
         temp = 0.000001
 
     payload = {
+        "model": model_name,
         "messages": messages,
         "temperature": temp,
         "top_p": top_p,
@@ -785,9 +1004,24 @@ def nvidia_api_stream_iter(model_name, messages, temp, top_p, max_tokens, api_ba
     }
     logger.info(f"==== request ====\n{payload}")
 
-    response = requests.post(
-        api_base, headers=headers, json=payload, stream=True, timeout=1
-    )
+    # payload.pop("model")
+
+    # try 3 times
+    for i in range(3):
+        try:
+            response = requests.post(
+                api_base, headers=headers, json=payload, stream=True, timeout=3
+            )
+            break
+        except Exception as e:
+            logger.error(f"==== error ====\n{e}")
+            if i == 2:
+                yield {
+                    "text": f"**API REQUEST ERROR** Reason: API timeout. please try again later.",
+                    "error_code": 1,
+                }
+                return
+
     text = ""
     for line in response.iter_lines():
         if line:
@@ -986,7 +1220,12 @@ def reka_api_stream_iter(
     api_key: Optional[str] = None,  # default is env var CO_API_KEY
     api_base: Optional[str] = None,
 ):
+    from reka.client import Reka
+    from reka import TypedText
+
     api_key = api_key or os.environ["REKA_API_KEY"]
+
+    client = Reka(api_key=api_key)
 
     use_search_engine = False
     if "-online" in model_name:
@@ -1004,34 +1243,105 @@ def reka_api_stream_iter(
 
     # Make requests for logging
     text_messages = []
-    for message in messages:
-        text_messages.append({"type": message["type"], "text": message["text"]})
+    for turn in messages:
+        for message in turn.content:
+            if isinstance(message, TypedText):
+                text_messages.append({"type": message.type, "text": message.text})
     logged_request = dict(request)
     logged_request["conversation_history"] = text_messages
 
     logger.info(f"==== request ====\n{logged_request}")
 
-    response = requests.post(
-        api_base,
-        stream=True,
-        json=request,
-        headers={
-            "X-Api-Key": api_key,
-        },
+    response = client.chat.create_stream(
+        messages=messages,
+        max_tokens=max_new_tokens,
+        top_p=top_p,
+        model=model_name,
     )
 
-    if response.status_code != 200:
-        error_message = response.text
-        logger.error(f"==== error from reka api: {error_message} ====")
+    for chunk in response:
+        try:
+            yield {"text": chunk.responses[0].chunk.content, "error_code": 0}
+        except:
+            yield {
+                "text": f"**API REQUEST ERROR** ",
+                "error_code": 1,
+            }
+
+
+def metagen_api_stream_iter(
+    model_name,
+    messages,
+    temperature,
+    top_p,
+    max_new_tokens,
+    api_key,
+    api_base,
+    conversation_id,
+):
+    try:
+        text_messages = []
+        for message in messages:
+            if type(message["content"]) == str:  # text-only model
+                text_messages.append(message)
+            else:  # vision model
+                filtered_content_list = [
+                    content
+                    for content in message["content"]
+                    if content["type"] == "text"
+                ]
+                text_messages.append(
+                    {"role": message["role"], "content": filtered_content_list}
+                )
+        gen_params = {
+            "model": model_name,
+            "prompt": text_messages,
+            "temperature": temperature,
+            "top_p": top_p,
+            "max_new_tokens": max_new_tokens,
+        }
+        logger.info(f"==== request ====\n{gen_params}")
+
+        res = requests.post(
+            f"{api_base}/chat_stream_completions?access_token={api_key}",
+            stream=True,
+            headers={"Content-Type": "application/json"},
+            json={
+                "model": model_name,
+                "chunks_delimited": True,
+                "messages": messages,
+                "conversation_id": conversation_id,
+                "options": {
+                    "max_tokens": max_new_tokens,
+                    "generation_algorithm": "top_p",
+                    "top_p": top_p,
+                    "temperature": temperature,
+                },
+            },
+            timeout=30,
+        )
+
+        if res.status_code != 200:
+            logger.error(f"Unexpected response ({res.status_code}): {res.text}")
+            yield {
+                "text": f"**API REQUEST ERROR** Reason: Unknown.",
+                "error_code": 1,
+            }
+
+        text = ""
+        for line in res.iter_lines():
+            if line:
+                part = json.loads(line.decode("utf-8"))
+                if "text" in part:
+                    text += part["text"]
+                data = {
+                    "text": text,
+                    "error_code": 0,
+                }
+                yield data
+    except Exception as e:
+        logger.error(f"==== error ====\n{e}")
         yield {
-            "text": f"**API REQUEST ERROR** Reason: {error_message}",
+            "text": f"**API REQUEST ERROR** Reason: Unknown.",
             "error_code": 1,
         }
-        return
-
-    for line in response.iter_lines():
-        line = line.decode("utf8")
-        if not line.startswith("data: "):
-            continue
-        gen = json.loads(line[6:])
-        yield {"text": gen["text"], "error_code": 0}

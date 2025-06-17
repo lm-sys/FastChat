@@ -1,5 +1,5 @@
 # Chatbot Arena
-Chatbot Arena is an LLM benchmark platform featuring anonymous, randomized battles, available at https://chat.lmsys.org.
+Chatbot Arena is an LLM benchmark platform featuring anonymous, randomized battles, available at https://lmarena.ai.
 We invite the entire community to join this benchmarking effort by contributing your votes and models.
 
 ## How to add a new model

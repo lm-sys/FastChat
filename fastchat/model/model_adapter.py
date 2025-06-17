@@ -61,6 +61,7 @@ ANTHROPIC_MODEL_LIST = (
     "claude-3-haiku-20240307-vertex",
     "claude-3-sonnet-20240229",
     "claude-3-sonnet-20240229-vertex",
+    "claude-3-5-sonnet-20240620",
     "claude-3-opus-20240229",
     "claude-instant-1",
     "claude-instant-1.2",
@@ -80,6 +81,16 @@ OPENAI_MODEL_LIST = (
     "gpt-4-0125-preview",
     "gpt-4-turbo-browsing",
     "gpt-4-turbo-2024-04-09",
+    "gpt2-chatbot",
+    "im-also-a-good-gpt2-chatbot",
+    "im-a-good-gpt2-chatbot",
+    "gpt-4o-mini-2024-07-18",
+    "gpt-4o-2024-05-13",
+    "gpt-4o-2024-08-06",
+    "chatgpt-4o-latest-20240903",
+    "chatgpt-4o-latest",
+    "o1-preview",
+    "o1-mini",
 )
 
 
@@ -1111,6 +1122,22 @@ class ChatGPTAdapter(BaseModelAdapter):
             return get_conv_template("api_based_default")
         if "gpt-4-turbo-2024-04-09" in model_path:
             return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "gpt2-chatbot" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "gpt-4o-2024-05-13" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "gpt-4o-2024-08-06" in model_path:
+            return get_conv_template("gpt-mini")
+        if "anonymous-chatbot" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "chatgpt-4o-latest" in model_path:
+            return get_conv_template("gpt-4-turbo-2024-04-09")
+        if "gpt-mini" in model_path:
+            return get_conv_template("gpt-mini")
+        if "gpt-4o-mini-2024-07-18" in model_path:
+            return get_conv_template("gpt-mini")
+        if "o1" in model_path:
+            return get_conv_template("api_based_default")
         return get_conv_template("chatgpt")
 
 
@@ -1157,6 +1184,8 @@ class ClaudeAdapter(BaseModelAdapter):
             return get_conv_template("claude-3-haiku-20240307")
         if "claude-3-sonnet" in model_path:
             return get_conv_template("claude-3-sonnet-20240229")
+        if "claude-3-5-sonnet" in model_path:
+            return get_conv_template("claude-3-5-sonnet-20240620-v2")
         if "claude-3-opus" in model_path:
             return get_conv_template("claude-3-opus-20240229")
         return get_conv_template("claude")
@@ -1199,19 +1228,6 @@ class GeminiAdapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("gemini")
-
-
-class GeminiDevAdapter(BaseModelAdapter):
-    """The model adapter for Gemini 1.5 Pro"""
-
-    def match(self, model_path: str):
-        return "gemini-1.5-pro" in model_path.lower()
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        raise NotImplementedError()
-
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("gemini-dev")
 
 
 class BiLLaAdapter(BaseModelAdapter):
@@ -1564,7 +1580,7 @@ class Llama3Adapter(BaseModelAdapter):
     """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
 
     def match(self, model_path: str):
-        return "llama-3" in model_path.lower()
+        return "llama-3-" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
@@ -1574,6 +1590,43 @@ class Llama3Adapter(BaseModelAdapter):
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("llama-3")
+
+
+class Llama31Adapter(BaseModelAdapter):
+    """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
+
+    def match(self, model_path: str):
+        keywords = [
+            "llama-3.1",
+        ]
+        for keyword in keywords:
+            if keyword in model_path.lower():
+                return True
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        model, tokenizer = super().load_model(model_path, from_pretrained_kwargs)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        if model_path.lower() in [
+            "llama-3.1-8b-instruct",
+            "llama-3.1-70b-instruct",
+            "the-real-chatbot-v2",
+        ]:
+            return get_conv_template("meta-llama-3.1-sp")
+        return get_conv_template("meta-llama-3.1")
+
+
+class GrokAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        return "grok" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "mini" in model_path.lower():
+            return get_conv_template("grok-2-mini")
+        return get_conv_template("grok-2")
 
 
 class CuteGPTAdapter(BaseModelAdapter):
@@ -2179,6 +2232,21 @@ class DeepseekChatAdapter(BaseModelAdapter):
         return get_conv_template("deepseek-chat")
 
 
+class GeminiAdapter(BaseModelAdapter):
+    """The model adapter for Gemini"""
+
+    def match(self, model_path: str):
+        return "gemini" in model_path.lower() or "bard" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        raise NotImplementedError()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        if "gemini-1.5-pro" in model_path:
+            return get_conv_template("gemini-1.5-pro")
+        return get_conv_template("gemini")
+
+
 class Yuan2Adapter(BaseModelAdapter):
     """The model adapter for Yuan2.0"""
 
@@ -2397,7 +2465,7 @@ class CohereAdapter(BaseModelAdapter):
 
 
 class DBRXAdapter(BaseModelAdapter):
-    """The model adapter for Cohere"""
+    """The model adapter for Databricks"""
 
     def match(self, model_path: str):
         return model_path in ["dbrx-instruct"]
@@ -2414,6 +2482,19 @@ class RekaAdapter(BaseModelAdapter):
 
     def match(self, model_path: str):
         return "reka" in model_path.lower()
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("api_based_default")
+
+
+class NoSystemAdapter(BaseModelAdapter):
+    def match(self, model_path: str):
+        keyword_list = ["athene-70b", "p2l"]
+
+        for keyword in keyword_list:
+            if keyword == model_path.lower():
+                return True
+        return False
 
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("api_based_default")
@@ -2444,7 +2525,6 @@ register_model_adapter(PhoenixAdapter)
 register_model_adapter(BardAdapter)
 register_model_adapter(PaLM2Adapter)
 register_model_adapter(GeminiAdapter)
-register_model_adapter(GeminiDevAdapter)
 register_model_adapter(GemmaAdapter)
 register_model_adapter(ChatGPTAdapter)
 register_model_adapter(AzureOpenAIAdapter)
@@ -2470,7 +2550,6 @@ register_model_adapter(PythiaAdapter)
 register_model_adapter(InternLMChatAdapter)
 register_model_adapter(StarChatAdapter)
 register_model_adapter(Llama2Adapter)
-register_model_adapter(Llama3Adapter)
 register_model_adapter(CuteGPTAdapter)
 register_model_adapter(OpenOrcaAdapter)
 register_model_adapter(DolphinAdapter)
@@ -2519,6 +2598,10 @@ register_model_adapter(YandexGPTAdapter)
 register_model_adapter(CllmAdapter)
 register_model_adapter(RekaAdapter)
 register_model_adapter(SmaugChatAdapter)
+register_model_adapter(Llama3Adapter)
+register_model_adapter(Llama31Adapter)
+register_model_adapter(GrokAdapter)
+register_model_adapter(NoSystemAdapter)
 
 # After all adapters, try the default base adapter.
 register_model_adapter(BaseModelAdapter)

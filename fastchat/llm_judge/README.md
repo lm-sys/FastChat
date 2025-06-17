@@ -57,6 +57,8 @@ To make sure FastChat loads the correct prompt template, see the supported model
 
 You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.
 
+> Note: if you experience slow answer generation, please refer to [Other Backends](#other-backends) section to use inference engine to speed up by 20x.
+
 #### Step 2. Generate GPT-4 judgments
 There are several options to use GPT-4 as a judge, such as pairwise winrate and single-answer grading.
 In MT-bench, we recommend single-answer grading as the default mode.
@@ -134,9 +136,7 @@ We can also use vLLM for answer generation, which can be faster for the models s
 
 1. Launch a vLLM worker
 ```
-python3 -m fastchat.serve.controller
-python3 -m fastchat.serve.vllm_worker --model-path [MODEL-PATH]
-python3 -m fastchat.serve.openai_api_server --host localhost --port 8000
+vllm serve [MODEL-PATH] --dtype auto
 ```
   - Arguments:
     - `[MODEL-PATH]` is the path to the weights, which can be a local folder or a Hugging Face repo ID.

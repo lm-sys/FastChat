@@ -14,6 +14,7 @@ from fastchat.constants import (
     CONVERSATION_LIMIT_MSG,
     INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    SURVEY_LINK,
 )
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_web_server import (
@@ -26,7 +27,6 @@ from fastchat.serve.gradio_web_server import (
     invisible_btn,
     acknowledgment_md,
     get_ip,
-    _prepare_text_with_image,
     get_model_description_md,
 )
 from fastchat.serve.remote_logger import get_remote_logger
@@ -47,20 +47,20 @@ def set_global_vars_named(enable_moderation_):
 
 
 def load_demo_side_by_side_named(models, url_params):
-    states = (None,) * num_sides
+    states = [None] * num_sides
 
     model_left = models[0] if len(models) > 0 else ""
     if len(models) > 1:
-        weights = ([8] * 4 + [4] * 8 + [1] * 32)[: len(models) - 1]
+        weights = ([8] * 4 + [4] * 8 + [1] * 64)[: len(models) - 1]
         weights = weights / np.sum(weights)
         model_right = np.random.choice(models[1:], p=weights)
     else:
         model_right = model_left
 
-    selector_updates = (
+    selector_updates = [
         gr.Dropdown(choices=models, value=model_left, visible=True),
         gr.Dropdown(choices=models, value=model_right, visible=True),
-    )
+    ]
 
     return states + selector_updates
 
@@ -152,7 +152,7 @@ def share_click(state0, state1, model_selector0, model_selector1, request: gr.Re
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, text, image, request: gr.Request
+    state0, state1, model_selector0, model_selector1, text, request: gr.Request
 ):
     ip = get_ip(request)
     logger.info(f"add_text (named). ip: {ip}. len: {len(text)}")
@@ -197,7 +197,7 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [CONVERSATION_LIMIT_MSG, None]
+            + [CONVERSATION_LIMIT_MSG]
             + [
                 no_change_btn,
             ]
@@ -206,17 +206,14 @@ def add_text(
 
     text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
-        post_processed_text = _prepare_text_with_image(
-            states[i], text, image, csam_flag=False
-        )
-        states[i].conv.append_message(states[i].conv.roles[0], post_processed_text)
+        states[i].conv.append_message(states[i].conv.roles[0], text)
         states[i].conv.append_message(states[i].conv.roles[1], None)
         states[i].skip_next = False
 
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + ["", None]
+        + [""]
         + [
             disable_btn,
         ]
@@ -257,17 +254,33 @@ def bot_response_multi(
             )
         )
 
-    is_stream_batch = []
+    model_tpy = []
     for i in range(num_sides):
-        is_stream_batch.append(
-            states[i].model_name
-            in [
-                "gemini-pro",
-                "gemini-pro-dev-api",
-                "gemma-1.1-2b-it",
-                "gemma-1.1-7b-it",
-            ]
-        )
+        token_per_yield = 1
+        if states[i].model_name in [
+            "gemini-pro",
+            "gemma-1.1-2b-it",
+            "gemma-1.1-7b-it",
+            "phi-3-mini-4k-instruct",
+            "phi-3-mini-128k-instruct",
+            "snowflake-arctic-instruct",
+        ]:
+            token_per_yield = 30
+        elif states[i].model_name in [
+            "qwen-max-0428",
+            "qwen-vl-max-0809",
+            "qwen1.5-110b-chat",
+        ]:
+            token_per_yield = 7
+        elif states[i].model_name in [
+            "qwen2.5-72b-instruct",
+            "qwen2-72b-instruct",
+            "qwen-plus-0828",
+            "qwen-max-0919",
+            "llama-3.1-405b-instruct-bf16",
+        ]:
+            token_per_yield = 4
+        model_tpy.append(token_per_yield)
 
     chatbots = [None] * num_sides
     iters = 0
@@ -276,9 +289,8 @@ def bot_response_multi(
         iters += 1
         for i in range(num_sides):
             try:
-                # yield gemini fewer times as its chunk size is larger
-                # otherwise, gemini will stream too fast
-                if not is_stream_batch[i] or (iters % 30 == 1 or iters < 3):
+                # yield fewer times if chunk size is larger
+                if model_tpy[i] == 1 or (iters % model_tpy[i] == 1 or iters < 3):
                     ret = next(gen[i])
                     states[i], chatbots[i] = ret[0], ret[1]
                 stop = False
@@ -300,16 +312,17 @@ def flash_buttons():
 
 
 def build_side_by_side_ui_named(models):
-    notice_markdown = """
-# ⚔️  Chatbot Arena: Benchmarking LLMs in the Wild
-- | [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+    notice_markdown = f"""
+# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
-## 📜 Rules
-- Chat with any two models side-by-side and vote!
-- You can continue chatting for multiple rounds.
-- Click "Clear history" to start a new round.
+{SURVEY_LINK}
 
-## 🤖 Choose two models to compare
+## 📜 How It Works
+- Ask any question to two chosen models (e.g., ChatGPT, Gemini, Claude, Llama) and vote for the better one!
+- You can chat for multiple turns until you identify a winner.
+
+## 👇 Choose two models to compare
 """
 
     states = [gr.State() for _ in range(num_sides)]
@@ -343,8 +356,14 @@ def build_side_by_side_ui_named(models):
                     chatbots[i] = gr.Chatbot(
                         label=label,
                         elem_id=f"chatbot",
-                        height=550,
+                        height=650,
                         show_copy_button=True,
+                        latex_delimiters=[
+                            {"left": "$", "right": "$", "display": False},
+                            {"left": "$$", "right": "$$", "display": True},
+                            {"left": r"\(", "right": r"\)", "display": False},
+                            {"left": r"\[", "right": r"\]", "display": True},
+                        ],
                     )
 
     with gr.Row():
@@ -401,7 +420,6 @@ def build_side_by_side_ui_named(models):
     gr.Markdown(acknowledgment_md, elem_id="ack_markdown")
 
     # Register listeners
-    imagebox = gr.State(None)
     btn_list = [
         leftvote_btn,
         rightvote_btn,
@@ -470,8 +488,8 @@ function (a, b, c, d) {
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox, imagebox],
-        states + chatbots + [textbox, imagebox] + btn_list,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
@@ -481,8 +499,8 @@ function (a, b, c, d) {
     )
     send_btn.click(
         add_text,
-        states + model_selectors + [textbox, imagebox],
-        states + chatbots + [textbox, imagebox] + btn_list,
+        states + model_selectors + [textbox],
+        states + chatbots + [textbox] + btn_list,
     ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],

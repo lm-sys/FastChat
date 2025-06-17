@@ -8,6 +8,7 @@ import time
 
 import gradio as gr
 import numpy as np
+from typing import Union
 
 from fastchat.constants import (
     TEXT_MODERATION_MSG,
@@ -15,8 +16,9 @@ from fastchat.constants import (
     MODERATION_MSG,
     CONVERSATION_LIMIT_MSG,
     SLOW_MODEL_MSG,
-    INPUT_CHAR_LEN_LIMIT,
+    BLIND_MODE_INPUT_CHAR_LEN_LIMIT,
     CONVERSATION_TURN_LIMIT,
+    SURVEY_LINK,
 )
 from fastchat.model.model_adapter import get_conversation_template
 from fastchat.serve.gradio_block_arena_named import flash_buttons
@@ -31,7 +33,8 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
-    _prepare_text_with_image,
+    disable_text,
+    enable_text,
 )
 from fastchat.serve.gradio_block_arena_anony import (
     flash_buttons,
@@ -43,20 +46,29 @@ from fastchat.serve.gradio_block_arena_anony import (
     regenerate,
     clear_history,
     share_click,
-    add_text,
     bot_response_multi,
     set_global_vars_anony,
     load_demo_side_by_side_anony,
     get_sample_weight,
     get_battle_pair,
+    SAMPLING_WEIGHTS,
+    BATTLE_TARGETS,
+    SAMPLING_BOOST_MODELS,
+    OUTAGE_MODELS,
 )
 from fastchat.serve.gradio_block_arena_vision import (
-    get_vqa_sample,
     set_invisible_image,
     set_visible_image,
     add_image,
     moderate_input,
+    enable_multimodal,
+    _prepare_text_with_image,
+    convert_images_to_conversation_format,
+    invisible_text,
+    visible_text,
+    disable_multimodal,
 )
+from fastchat.serve.gradio_global_state import Context
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
     build_logger,
@@ -69,89 +81,35 @@ logger = build_logger("gradio_web_server_multi", "gradio_web_server_multi.log")
 num_sides = 2
 enable_moderation = False
 anony_names = ["", ""]
-models = []
+text_models = []
+vl_models = []
 
 # TODO(chris): fix sampling weights
-SAMPLING_WEIGHTS = {
-    # tier 0
-    "gpt-4o": 4,
-    "gpt-4-turbo": 4,
-    "gemini-1.5-flash": 4,
-    "gemini-1.5-pro": 4,
-    "claude-3-opus-20240229": 4,
-    "claude-3-haiku-20240307": 4,
-    "claude-3-sonnet-20240229": 4,
-    "llava-v1.6-34b": 4,
-    "llava-v1.6-13b": 4,
-    "llava-v1.6-7b": 4,
-    "reka-flash-20240226": 4,
-}
+VISION_SAMPLING_WEIGHTS = {}
 
 # TODO(chris): Find battle targets that make sense
-BATTLE_TARGETS = {
-    # "gpt-4-turbo": {
-    #     "gemini-1.5-pro-preview-0409",
-    #     "claude-3-opus-20240229",
-    #     "reka-flash-20240226",
-    # },
-    # "gemini-1.5-pro-preview-0409": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "reka-flash-20240226",
-    # },
-    # "gemini-1.0-pro-vision": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "claude-3-opus-20240229": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    #     "reka-flash-20240226",
-    # },
-    # "claude-3-sonnet-20240229": {
-    #     "claude-3-opus-20240229",
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "claude-3-haiku-20240307": {
-    #     "claude-3-opus-20240229",
-    #     "gpt-4-turbo",
-    #     "gemini-1.0-pro-vision",
-    #     "gemini-1.5-pro-preview-0409",
-    # },
-    # "llava-v1.6-34b": {
-    #     "gpt-4-turbo",
-    #     "gemini-1.5-pro-preview-0409",
-    #     "claude-3-opus-20240229",
-    #     "claude-3-sonnet-20240229",
-    #     "claude-3-haiku-20240307",
-    # },
-    # "llava-v1.6-13b": {"llava-v1.6-7b", "llava-v1.6-34b", "gemini-1.0-pro-vision"},
-    # "llava-v1.6-7b": {"llava-v1.6-13b", "gemini-1.0-pro-vision"},
-    # "reka-flash-20240226": {
-    #     "gemini-1.0-pro-vision",
-    #     "claude-3-haiku-20240307",
-    #     "claude-3-sonnet-20240229",
-    # },
-}
+VISION_BATTLE_TARGETS = {}
 
 # TODO(chris): Fill out models that require sampling boost
-SAMPLING_BOOST_MODELS = []
+VISION_SAMPLING_BOOST_MODELS = []
 
 # outage models won't be sampled.
-OUTAGE_MODELS = []
+VISION_OUTAGE_MODELS = []
 
 
-def load_demo_side_by_side_vision_anony(models_, url_params):
-    global models
-    models = models_
+def get_vqa_sample():
+    random_sample = np.random.choice(vqa_samples)
+    question, path = random_sample["question"], random_sample["path"]
+    res = {"text": "", "files": [path]}
+    return (res, path)
 
-    states = (None,) * num_sides
-    selector_updates = (
+
+def load_demo_side_by_side_vision_anony():
+    states = [None] * num_sides
+    selector_updates = [
         gr.Markdown(visible=True),
         gr.Markdown(visible=True),
-    )
+    ]
 
     return states + selector_updates
 
@@ -162,8 +120,10 @@ def clear_history_example(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
+        + [enable_multimodal, invisible_text, invisible_btn]
         + [invisible_btn] * 4
         + [disable_btn] * 2
+        + [enable_btn]
     )
 
 
@@ -181,20 +141,33 @@ def vote_last_response(states, vote_type, model_selectors, request: gr.Request):
         fout.write(json.dumps(data) + "\n")
     get_remote_logger().log(data)
 
+    gr.Info(
+        "🎉 Thanks for voting! Your vote shapes the leaderboard, please vote RESPONSIBLY."
+    )
+
+    model_name_1 = states[0].model_name
+    model_name_2 = states[1].model_name
+    model_name_map = {}
+
+    if model_name_1 in model_name_map:
+        model_name_1 = model_name_map[model_name_1]
+    if model_name_2 in model_name_map:
+        model_name_2 = model_name_map[model_name_2]
+
     if ":" not in model_selectors[0]:
         for i in range(5):
             names = (
-                "### Model A: " + states[0].model_name,
-                "### Model B: " + states[1].model_name,
+                "### Model A: " + model_name_1,
+                "### Model B: " + model_name_2,
             )
-            yield names + (None,) + (disable_btn,) * 4
+            yield names + (disable_text,) + (disable_btn,) * 4
             time.sleep(0.1)
     else:
         names = (
-            "### Model A: " + states[0].model_name,
-            "### Model B: " + states[1].model_name,
+            "### Model A: " + model_name_1,
+            "### Model B: " + model_name_2,
         )
-        yield names + (None,) + (disable_btn,) * 4
+        yield names + (disable_text,) + (disable_btn,) * 4
 
 
 def leftvote_last_response(
@@ -262,17 +235,29 @@ def clear_history(request: gr.Request):
         [None] * num_sides
         + [None] * num_sides
         + anony_names
-        + [None]
+        + [enable_multimodal, invisible_text, invisible_btn]
         + [invisible_btn] * 4
         + [disable_btn] * 2
+        + [enable_btn]
         + [""]
     )
 
 
 def add_text(
-    state0, state1, model_selector0, model_selector1, chat_input, request: gr.Request
+    state0,
+    state1,
+    model_selector0,
+    model_selector1,
+    chat_input: Union[str, dict],
+    context: Context,
+    request: gr.Request,
 ):
-    text, images = chat_input["text"], chat_input["files"]
+    if isinstance(chat_input, dict):
+        text, images = chat_input["text"], chat_input["files"]
+    else:
+        text = chat_input
+        images = []
+
     ip = get_ip(request)
     logger.info(f"add_text (anony). ip: {ip}. len: {len(text)}")
     states = [state0, state1]
@@ -282,17 +267,31 @@ def add_text(
     if states[0] is None:
         assert states[1] is None
 
-        model_left, model_right = get_battle_pair(
-            models,
-            BATTLE_TARGETS,
-            OUTAGE_MODELS,
-            SAMPLING_WEIGHTS,
-            SAMPLING_BOOST_MODELS,
-        )
-        states = [
-            State(model_left, is_vision=True),
-            State(model_right, is_vision=True),
-        ]
+        if len(images) > 0:
+            model_left, model_right = get_battle_pair(
+                context.all_vision_models,
+                VISION_BATTLE_TARGETS,
+                VISION_OUTAGE_MODELS,
+                VISION_SAMPLING_WEIGHTS,
+                VISION_SAMPLING_BOOST_MODELS,
+            )
+            states = [
+                State(model_left, is_vision=True),
+                State(model_right, is_vision=True),
+            ]
+        else:
+            model_left, model_right = get_battle_pair(
+                context.all_text_models,
+                BATTLE_TARGETS,
+                OUTAGE_MODELS,
+                SAMPLING_WEIGHTS,
+                SAMPLING_BOOST_MODELS,
+            )
+
+            states = [
+                State(model_left, is_vision=False),
+                State(model_right, is_vision=False),
+            ]
 
     if len(text) <= 0:
         for i in range(num_sides):
@@ -300,16 +299,21 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [None]
+            + [None, "", no_change_btn]
             + [
                 no_change_btn,
             ]
-            * 6
+            * 7
             + [""]
         )
 
     model_list = [states[i].model_name for i in range(num_sides)]
-    text, image_flagged, csam_flag = moderate_input(text, text, model_list, images, ip)
+
+    images = convert_images_to_conversation_format(images)
+
+    text, image_flagged, csam_flag = moderate_input(
+        state0, text, text, model_list, images, ip
+    )
 
     conv = states[0].conv
     if (len(conv.messages) - conv.offset) // 2 >= CONVERSATION_TURN_LIMIT:
@@ -319,11 +323,11 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": CONVERSATION_LIMIT_MSG}]
+            + [{"text": CONVERSATION_LIMIT_MSG}, "", no_change_btn]
             + [
                 no_change_btn,
             ]
-            * 6
+            * 7
             + [""]
         )
 
@@ -334,15 +338,19 @@ def add_text(
         return (
             states
             + [x.to_gradio_chatbot() for x in states]
-            + [{"text": IMAGE_MODERATION_MSG}]
             + [
+                {
+                    "text": IMAGE_MODERATION_MSG
+                    + " PLEASE CLICK 🎲 NEW ROUND TO START A NEW CONVERSATION."
+                },
+                "",
                 no_change_btn,
             ]
-            * 6
+            + [no_change_btn] * 7
             + [""]
         )
 
-    text = text[:INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
+    text = text[:BLIND_MODE_INPUT_CHAR_LEN_LIMIT]  # Hard cut-off
     for i in range(num_sides):
         post_processed_text = _prepare_text_with_image(
             states[i], text, images, csam_flag=csam_flag
@@ -358,27 +366,31 @@ def add_text(
     return (
         states
         + [x.to_gradio_chatbot() for x in states]
-        + [None]
+        + [disable_multimodal, visible_text, enable_btn]
         + [
             disable_btn,
         ]
-        * 6
+        * 7
         + [hint_msg]
     )
 
 
-def build_side_by_side_vision_ui_anony(models, random_questions=None):
-    notice_markdown = """
-# ⚔️  Vision Arena ⚔️: Benchmarking VLMs in the Wild
-| [Blog](https://lmsys.org/blog/2023-05-03-arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2306.05685) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/HSWAKCrnFx) |
+def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
+    notice_markdown = f"""
+# ⚔️  Chatbot Arena (formerly LMSYS): Free AI Chat to Compare & Test Best AI Chatbots
+[Blog](https://blog.lmarena.ai/blog/2023/arena/) | [GitHub](https://github.com/lm-sys/FastChat) | [Paper](https://arxiv.org/abs/2403.04132) | [Dataset](https://github.com/lm-sys/FastChat/blob/main/docs/dataset_release.md) | [Twitter](https://twitter.com/lmsysorg) | [Discord](https://discord.gg/6GXcFg3TH8) | [Kaggle Competition](https://www.kaggle.com/competitions/lmsys-chatbot-arena)
 
-## 📜 Rules
-- Ask any question to two anonymous models (e.g., Claude, Gemini, GPT-4-V) and vote for the better one!
-- You can continue chatting until you identify a winner.
-- Vote won't be counted if model identity is revealed during conversation.
-- You can only chat with <span style='color: #DE3163; font-weight: bold'>one image per conversation</span>. You can upload images less than 15MB. Click the "Random Example" button to chat with a random image.
+{SURVEY_LINK}
 
-**❗️ For research purposes, we log user prompts and images, and may release this data to the public in the future. Please do not upload any confidential or personal information.**
+## 📜 How It Works
+- **Blind Test**: Ask any question to two anonymous AI chatbots (ChatGPT, Gemini, Claude, Llama, and more).
+- **Vote for the Best**: Choose the best response. You can keep chatting until you find a winner.
+- **Play Fair**: If AI identity reveals, your vote won't count.
+
+**NEW** Image Support: <span style='color: #DE3163; font-weight: bold'>Upload an image</span> to unlock the multimodal arena!
+
+## 🏆 Chatbot Arena LLM [Leaderboard](https://lmarena.ai/leaderboard)
+- Backed by over **1,000,000+** community votes, our platform ranks the best LLM and AI chatbots. Explore the top AI models on our LLM [leaderboard](https://lmarena.ai/leaderboard)!
 
 ## 👇 Chat now!
 """
@@ -386,8 +398,9 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
     states = [gr.State() for _ in range(num_sides)]
     model_selectors = [None] * num_sides
     chatbots = [None] * num_sides
-
+    context_state = gr.State(context)
     gr.Markdown(notice_markdown, elem_id="notice_markdown")
+    text_and_vision_models = context.models
 
     with gr.Row():
         with gr.Column(scale=2, visible=False) as image_column:
@@ -400,10 +413,12 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
         with gr.Column(scale=5):
             with gr.Group(elem_id="share-region-anony"):
                 with gr.Accordion(
-                    f"🔍 Expand to see the descriptions of {len(models)} models",
+                    f"🔍 Expand to see the descriptions of {len(text_and_vision_models)} models",
                     open=False,
                 ):
-                    model_description_md = get_model_description_md(models)
+                    model_description_md = get_model_description_md(
+                        text_and_vision_models
+                    )
                     gr.Markdown(
                         model_description_md, elem_id="model_description_markdown"
                     )
@@ -415,8 +430,14 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
                             chatbots[i] = gr.Chatbot(
                                 label=label,
                                 elem_id="chatbot",
-                                height=550,
+                                height=650,
                                 show_copy_button=True,
+                                latex_delimiters=[
+                                    {"left": "$", "right": "$", "display": False},
+                                    {"left": "$$", "right": "$$", "display": True},
+                                    {"left": r"\(", "right": r"\)", "display": False},
+                                    {"left": r"\[", "right": r"\]", "display": True},
+                                ],
                             )
 
                 with gr.Row():
@@ -441,26 +462,37 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
         )
 
     with gr.Row():
-        textbox = gr.MultimodalTextbox(
+        textbox = gr.Textbox(
+            show_label=False,
+            placeholder="👉 Enter your prompt and press ENTER",
+            elem_id="input_box",
+            visible=False,
+            scale=3,
+        )
+
+        multimodal_textbox = gr.MultimodalTextbox(
             file_types=["image"],
             show_label=False,
             container=True,
-            placeholder="Click add or drop your image here",
+            placeholder="Enter your prompt or add image here",
             elem_id="input_box",
+            scale=3,
         )
-        # send_btn = gr.Button(value="Send", variant="primary", scale=0)
+        send_btn = gr.Button(
+            value="Send", variant="primary", scale=1, visible=False, interactive=False
+        )
 
     with gr.Row() as button_row:
         if random_questions:
             global vqa_samples
             with open(random_questions, "r") as f:
                 vqa_samples = json.load(f)
-            random_btn = gr.Button(value="🎲 Random Example", interactive=True)
+            random_btn = gr.Button(value="🔮 Random Image", interactive=True)
         clear_btn = gr.Button(value="🎲 New Round", interactive=False)
         regenerate_btn = gr.Button(value="🔄  Regenerate", interactive=False)
         share_btn = gr.Button(value="📷  Share")
 
-    with gr.Accordion("Parameters", open=False) as parameter_row:
+    with gr.Accordion("Parameters", open=False, visible=False) as parameter_row:
         temperature = gr.Slider(
             minimum=0.0,
             maximum=1.0,
@@ -480,7 +512,7 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
         max_output_tokens = gr.Slider(
             minimum=16,
             maximum=2048,
-            value=1024,
+            value=2000,
             step=64,
             interactive=True,
             label="Max output tokens",
@@ -529,7 +561,13 @@ def build_side_by_side_vision_ui_anony(models, random_questions=None):
     clear_btn.click(
         clear_history,
         None,
-        states + chatbots + model_selectors + [textbox] + btn_list + [slow_warning],
+        states
+        + chatbots
+        + model_selectors
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list
+        + [random_btn]
+        + [slow_warning],
     )
 
     share_js = """
@@ -554,15 +592,66 @@ function (a, b, c, d) {
 """
     share_btn.click(share_click, states + model_selectors, [], js=share_js)
 
-    textbox.input(add_image, [textbox], [imagebox]).then(
-        set_visible_image, [textbox], [image_column]
-    ).then(clear_history_example, None, states + chatbots + model_selectors + btn_list)
+    multimodal_textbox.input(add_image, [multimodal_textbox], [imagebox]).then(
+        set_visible_image, [multimodal_textbox], [image_column]
+    ).then(
+        clear_history_example,
+        None,
+        states
+        + chatbots
+        + model_selectors
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list,
+    )
+
+    multimodal_textbox.submit(
+        add_text,
+        states + model_selectors + [multimodal_textbox, context_state],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list
+        + [random_btn]
+        + [slow_warning],
+    ).then(set_invisible_image, [], [image_column]).then(
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
+        states + chatbots + btn_list,
+    ).then(
+        flash_buttons,
+        [],
+        btn_list,
+    )
 
     textbox.submit(
         add_text,
-        states + model_selectors + [textbox],
-        states + chatbots + [textbox] + btn_list + [slow_warning],
-    ).then(set_invisible_image, [], [image_column]).then(
+        states + model_selectors + [textbox, context_state],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list
+        + [random_btn]
+        + [slow_warning],
+    ).then(
+        bot_response_multi,
+        states + [temperature, top_p, max_output_tokens],
+        states + chatbots + btn_list,
+    ).then(
+        flash_buttons,
+        [],
+        btn_list,
+    )
+
+    send_btn.click(
+        add_text,
+        states + model_selectors + [textbox, context_state],
+        states
+        + chatbots
+        + [multimodal_textbox, textbox, send_btn]
+        + btn_list
+        + [random_btn]
+        + [slow_warning],
+    ).then(
         bot_response_multi,
         states + [temperature, top_p, max_output_tokens],
         states + chatbots + btn_list,
@@ -576,9 +665,16 @@ function (a, b, c, d) {
         random_btn.click(
             get_vqa_sample,  # First, get the VQA sample
             [],  # Pass the path to the VQA samples
-            [textbox, imagebox],  # Outputs are textbox and imagebox
-        ).then(set_visible_image, [textbox], [image_column]).then(
-            clear_history_example, None, states + chatbots + model_selectors + btn_list
+            [multimodal_textbox, imagebox],  # Outputs are textbox and imagebox
+        ).then(set_visible_image, [multimodal_textbox], [image_column]).then(
+            clear_history_example,
+            None,
+            states
+            + chatbots
+            + model_selectors
+            + [multimodal_textbox, textbox, send_btn]
+            + btn_list
+            + [random_btn],
         )
 
     return states + model_selectors

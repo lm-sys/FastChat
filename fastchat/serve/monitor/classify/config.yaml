@@ -1,0 +1,29 @@
+# Yaml config file for category classification
+
+input_file: null # json
+cache_file: null # json
+output_file: null # json line
+
+convert_to_json: True
+
+task_name:
+  - criteria_v0.1
+  - if_v0.1
+  - math_v0.1
+  - creative_writing_v0.1
+
+model_name: null
+name: llama-3-70b-instruct
+api_type: openai
+endpoints:
+  - api_base: null
+    api_key: null
+parallel: 50
+temperature: 0.0
+max_token: 512
+
+image_dir: null # directory where vision arena images are stored
+
+max_retry: 2
+retry_sleep: 10
+error_output: $ERROR$
