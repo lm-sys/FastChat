@@ -142,6 +142,12 @@ class ModelWorker(BaseModelWorker):
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
             yield json.dumps(ret).encode() + b"\0"
+        except Exception as e:
+            ret = {
+                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                "error_code": ErrorCode.INTERNAL_ERROR,
+            }
+            yield json.dumps(ret).encode() + b"\0"
 
     def generate_gate(self, params):
         for x in self.generate_stream_gate(params):
