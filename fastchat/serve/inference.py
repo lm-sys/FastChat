@@ -43,7 +43,7 @@ from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_le
 
 
 def prepare_logits_processor(
-    temperature: float, repetition_penalty: float, top_p: float, top_k: int
+        temperature: float, repetition_penalty: float, top_p: float, top_k: int
 ) -> LogitsProcessorList:
     processor_list = LogitsProcessorList()
     # TemperatureLogitsWarper doesn't accept 0.0, 1.0 makes it a no-op so we skip two cases.
@@ -60,13 +60,13 @@ def prepare_logits_processor(
 
 @torch.inference_mode()
 def generate_stream(
-    model,
-    tokenizer,
-    params: Dict,
-    device: str,
-    context_len: int,
-    stream_interval: int = 2,
-    judge_sent_end: bool = False,
+        model,
+        tokenizer,
+        params: Dict,
+        device: str,
+        context_len: int,
+        stream_interval: int = 2,
+        judge_sent_end: bool = False,
 ):
     if hasattr(model, "device"):
         device = model.device
@@ -85,6 +85,9 @@ def generate_stream(
     stop_token_ids = params.get("stop_token_ids", None) or []
     if tokenizer.eos_token_id not in stop_token_ids:
         stop_token_ids.append(tokenizer.eos_token_id)
+    for item in model.generation_config.eos_token_id:
+        if item not in stop_token_ids:
+            stop_token_ids.append(item)
 
     logits_processor = prepare_logits_processor(
         temperature, repetition_penalty, top_p, top_k
@@ -139,7 +142,7 @@ def generate_stream(
                 shift_logits = logits[..., :-1, :].contiguous()
                 shift_logits = torch.log_softmax(shift_logits, dim=-1).tolist()
                 for label_id, logit in zip(
-                    shift_input_ids[0].tolist(), shift_logits[0]
+                        shift_input_ids[0].tolist(), shift_logits[0]
                 ):
                     token_logprobs.append(logit[label_id])
         else:  # decoding
@@ -231,7 +234,7 @@ def generate_stream(
                     if echo
                     else token_logprobs[input_echo_len:],
                     "top_logprobs": [{}]
-                    * len(token_logprobs if echo else token_logprobs[input_echo_len:]),
+                                    * len(token_logprobs if echo else token_logprobs[input_echo_len:]),
                 }
                 # Compute text_offset
                 curr_pos = 0
@@ -335,27 +338,27 @@ class ChatIO(abc.ABC):
 
 
 def chat_loop(
-    model_path: str,
-    device: str,
-    num_gpus: int,
-    max_gpu_memory: str,
-    dtype: Optional[torch.dtype],
-    load_8bit: bool,
-    cpu_offloading: bool,
-    conv_template: Optional[str],
-    conv_system_msg: Optional[str],
-    temperature: float,
-    repetition_penalty: float,
-    max_new_tokens: int,
-    chatio: ChatIO,
-    gptq_config: Optional[GptqConfig] = None,
-    awq_config: Optional[AWQConfig] = None,
-    exllama_config: Optional[ExllamaConfig] = None,
-    xft_config: Optional[XftConfig] = None,
-    revision: str = "main",
-    judge_sent_end: bool = True,
-    debug: bool = True,
-    history: bool = True,
+        model_path: str,
+        device: str,
+        num_gpus: int,
+        max_gpu_memory: str,
+        dtype: Optional[torch.dtype],
+        load_8bit: bool,
+        cpu_offloading: bool,
+        conv_template: Optional[str],
+        conv_system_msg: Optional[str],
+        temperature: float,
+        repetition_penalty: float,
+        max_new_tokens: int,
+        chatio: ChatIO,
+        gptq_config: Optional[GptqConfig] = None,
+        awq_config: Optional[AWQConfig] = None,
+        exllama_config: Optional[ExllamaConfig] = None,
+        xft_config: Optional[XftConfig] = None,
+        revision: str = "main",
+        judge_sent_end: bool = True,
+        debug: bool = True,
+        history: bool = True,
 ):
     # Model
     model, tokenizer = load_model(
@@ -401,7 +404,7 @@ def chat_loop(
         """
         Reprints the conversation from the start.
         """
-        for message in conv.messages[conv.offset :]:
+        for message in conv.messages[conv.offset:]:
             chatio.prompt_for_output(message[0])
             chatio.print_output(message[1])
 
@@ -483,7 +486,7 @@ def chat_loop(
             # Check if file exists and add .json if needed
             if not os.path.exists(filename):
                 if (not filename.endswith(".json")) and os.path.exists(
-                    filename + ".json"
+                        filename + ".json"
                 ):
                     filename += ".json"
                 else:

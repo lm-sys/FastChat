@@ -183,6 +183,7 @@ def train():
         padding_side="right",
         use_fast=False,
     )
+    tokenizer.pad_token_id = tokenizer.eos_token_id
     tokenizer.pad_token = tokenizer.unk_token
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)

@@ -27,7 +27,6 @@ from fastchat.constants import (
 )
 from fastchat.utils import build_logger
 
-
 logger = build_logger("controller", "controller.log")
 
 
@@ -73,11 +72,11 @@ class Controller:
         self.heart_beat_thread.start()
 
     def register_worker(
-        self,
-        worker_name: str,
-        check_heart_beat: bool,
-        worker_status: dict,
-        multimodal: bool,
+            self,
+            worker_name: str,
+            check_heart_beat: bool,
+            worker_status: dict,
+            multimodal: bool,
     ):
         if worker_name not in self.worker_info:
             logger.info(f"Register a new worker: {worker_name}")
@@ -123,7 +122,7 @@ class Controller:
 
         for w_name, w_info in old_info.items():
             if not self.register_worker(
-                w_name, w_info.check_heart_beat, None, w_info.multimodal
+                    w_name, w_info.check_heart_beat, None, w_info.multimodal
             ):
                 logger.info(f"Remove stale worker: {w_name}")
 
@@ -263,6 +262,17 @@ class Controller:
             "queue_length": queue_length,
         }
 
+    def worker_get_info(self):
+        worker_info = self.worker_info
+        for w_name in worker_info:
+            worker_status = self.get_worker_status(w_name)
+            if worker_status is not None:
+                worker_info[w_name].model_names = worker_status["model_names"]
+                worker_info[w_name].speed = worker_status["speed"]
+                worker_info[w_name].queue_length = worker_status["queue_length"]
+
+        return worker_info
+
     def worker_api_generate_stream(self, params):
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
@@ -348,6 +358,11 @@ async def worker_api_get_status(request: Request):
 @app.get("/test_connection")
 async def worker_api_get_status(request: Request):
     return "success"
+
+
+@app.get("/worker_get_info")
+async def worker_api_get_status(request: Request):
+    return controller.worker_get_info()
 
 
 def create_controller():
