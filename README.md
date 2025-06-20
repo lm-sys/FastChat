@@ -18,7 +18,7 @@ FastChat's core features include:
 <details>
 <summary>More</summary>
 
-- [2023/08] We released **LongChat v1.5** based on Llama 2 with 32K context lengths. Download [weights](#longchat).
+- [2023/08] We released **LongChat v1.5** based on Llama 2 with 32K context lengths. Download [weights](#other-models).
 - [2023/06] We introduced **MT-bench**, a challenging multi-turn question set for evaluating chatbots. Check out the blog [post](https://lmsys.org/blog/2023-06-22-leaderboard/).
 - [2023/06] We introduced **LongChat**, our long-context chatbots and evaluation tools. Check out the blog [post](https://lmsys.org/blog/2023-06-29-longchat/).
 - [2023/05] We introduced **Chatbot Arena** for battles among LLMs. Check out the blog [post](https://lmsys.org/blog/2023-05-03-arena).
@@ -150,7 +150,7 @@ python3 -m fastchat.serve.cli --model-path lmsys/vicuna-7b-v1.5 --device mps --l
 Vicuna-7B can run on a 32GB M1 Macbook with 1 - 2 words / second.
 
 #### Intel XPU (Intel Data Center and Arc A-Series GPUs)
-Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/installation.html). Set the OneAPI environment variables:
+Install the [Intel Extension for PyTorch](https://intel.github.io/intel-extension-for-pytorch/xpu/latest/tutorials/getting_started.html). Set the OneAPI environment variables:
 ```
 source /opt/intel/oneapi/setvars.sh
 ```
@@ -192,7 +192,7 @@ This requires 8-bit compression to be enabled and the bitsandbytes package to be
 - FastChat supports ExLlama V2. See [docs/exllama_v2.md](/docs/exllama_v2.md).
 - FastChat supports GPTQ 4bit inference with [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa). See [docs/gptq.md](/docs/gptq.md).
 - FastChat supports AWQ 4bit inference with [mit-han-lab/llm-awq](https://github.com/mit-han-lab/llm-awq). See [docs/awq.md](/docs/awq.md).
-- [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
+- [MLC LLM](https://mlc.ai/mlc-llm/), backed by [TVM Unity](https://github.com/apache/tvm/tree/unity-before-switch) compiler, deploys Vicuna natively on phones, consumer-class GPUs and web browsers via Vulkan, Metal, CUDA and WebGPU.
 
 #### Use models from modelscope
 For Chinese users, you can use models from www.modelscope.cn via specify the following environment variables.
