@@ -64,6 +64,7 @@ class ChatCompletionRequest(BaseModel):
     ]
     temperature: Optional[float] = 0.7
     top_p: Optional[float] = 1.0
+    logprobs: Optional[int] = None
     top_k: Optional[int] = -1
     n: Optional[int] = 1
     max_tokens: Optional[int] = None
@@ -81,6 +82,7 @@ class ChatMessage(BaseModel):
 
 class ChatCompletionResponseChoice(BaseModel):
     index: int
+    logprobs: Optional[LogProbs] = None
     message: ChatMessage
     finish_reason: Optional[Literal["stop", "length"]] = None
 

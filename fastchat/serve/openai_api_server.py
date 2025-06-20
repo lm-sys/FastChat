@@ -275,7 +275,7 @@ async def get_gen_params(
     frequency_penalty: Optional[float],
     max_tokens: Optional[int],
     echo: Optional[bool],
-    logprobs: Optional[int] = None,
+    logprobs: Optional[int],
     stop: Optional[Union[str, List[str]]],
     best_of: Optional[int] = None,
     use_beam_search: Optional[bool] = None,
@@ -431,6 +431,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
         frequency_penalty=request.frequency_penalty,
         max_tokens=request.max_tokens,
         echo=False,
+        logprobs=request.logprobs,
         stop=request.stop,
     )
 
@@ -472,6 +473,7 @@ async def create_chat_completion(request: ChatCompletionRequest):
             ChatCompletionResponseChoice(
                 index=i,
                 message=ChatMessage(role="assistant", content=content["text"]),
+                logprobs=create_openai_logprobs(content.get("logprobs", None)),
                 finish_reason=content.get("finish_reason", "stop"),
             )
         )
