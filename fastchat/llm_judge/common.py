@@ -13,10 +13,12 @@ from typing import Optional
 
 import openai
 import anthropic
+import cohere
 
 from fastchat.model.model_adapter import (
     get_conversation_template,
     ANTHROPIC_MODEL_LIST,
+    COHERE_MODEL_LIST,
     OPENAI_MODEL_LIST,
 )
 
@@ -169,6 +171,8 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
         judgment = chat_completion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
+    elif model in COHERE_MODEL_LIST:
+        judgment = chat_completion_cohere(model, conv, temperature=0, max_tokens=1024)
     else:
         raise ValueError(f"Invalid judge model name: {model}")
 
@@ -488,6 +492,42 @@ def chat_completion_anthropic(model, conv, temperature, max_tokens, api_dict=Non
             output = response.completion
             break
         except anthropic.APIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+    return output.strip()
+
+
+def chat_completion_cohere(model, conv, temperature, max_tokens):
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            co = cohere.Client(api_key=os.environ["CO_API_KEY"])
+            prompt = conv.get_prompt()  # we don't use this, here for compatibility
+            # Convert to Cohere chat_history format (see https://docs.cohere.com/docs/cochat-beta)
+            chat_history = [{"role": m[0], "message": m[1]} for m in conv.messages]
+            # The last message is ['Chatbot', None], which is not needed
+            if (
+                chat_history[-1]["role"] == conv.roles[1]
+                and chat_history[-1]["message"] is None
+            ):
+                chat_history = chat_history[:-1]
+            else:
+                raise ValueError("The last message is not ['Chatbot', None]")
+            # The last message remaining is now the User message we want to send to the model
+            if chat_history[-1]["role"] == conv.roles[0]:
+                message = chat_history.pop()["message"]
+            else:
+                raise ValueError("The last message is not from the User")
+            response = co.chat(
+                model=model,
+                message=message,
+                chat_history=chat_history,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            output = response.text
+            break
+        except cohere.CohereAPIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
     return output.strip()
