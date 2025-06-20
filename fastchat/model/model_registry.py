@@ -1000,3 +1000,10 @@ register_model_info(
     "https://huggingface.co/cllm",
     "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
 )
+
+register_model_info(
+    ["palmyra-x-004"],
+    "Palmyra",
+    "https://dev.writer.com/home/models",
+    "Palmyra by Writer",
+)

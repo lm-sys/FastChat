@@ -259,6 +259,16 @@ def get_api_provider_stream_iter(
             api_key=model_api_dict["api_key"],
             extra_body=extra_body,
         )
+    elif model_api_dict["api_type"] == "writer":
+        prompt = conv.to_openai_api_messages()
+        stream_iter = writer_api_stream_iter(
+            model_name,
+            prompt,
+            temperature,
+            top_p,
+            max_tokens=max_new_tokens,
+            api_key=model_api_dict["api_key"],
+        )
     else:
         raise NotImplementedError()
 
@@ -1345,3 +1355,41 @@ def metagen_api_stream_iter(
             "text": f"**API REQUEST ERROR** Reason: Unknown.",
             "error_code": 1,
         }
+
+
+def writer_api_stream_iter(
+    model_name, messages, temperature, top_p, max_tokens, api_key
+):
+    from writerai import Writer
+
+    api_key = api_key or os.environ["WRITER_API_KEY"]
+
+    client = Writer(api_key=api_key)
+
+    # Make requests
+    gen_params = {
+        "model": model_name,
+        "messages": messages,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_tokens": max_tokens,
+    }
+    logger.info(f"==== request ====\n{gen_params}")
+
+    res = client.chat.chat(
+        messages=messages,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        top_p=top_p,
+        model=model_name,
+        stream=True,
+    )
+    text = ""
+    for chunk in res:
+        if len(chunk.choices) > 0 and chunk.choices[0].delta.content is not None:
+            text += chunk.choices[0].delta.content
+            data = {
+                "text": text,
+                "error_code": 0,
+            }
+            yield data
