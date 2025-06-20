@@ -10,8 +10,16 @@ import os
 import re
 import time
 from typing import Optional
+from distutils.version import LooseVersion
 
 import openai
+
+if LooseVersion(openai.__version__) > LooseVersion("1.0"):
+    from openai import OpenAI, AzureOpenAI
+else:
+    print(
+        f"WARNING: Openai version {openai.__version__} is deprecated please use version >= 1.0"
+    )
 import anthropic
 
 from fastchat.model.model_adapter import (
@@ -405,6 +413,37 @@ def play_a_match_pair(match: MatchPair, output_file: str):
 
 
 def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
+    if LooseVersion(openai.__version__) < LooseVersion("1.0"):
+        return chat_completion_openai_depricated(
+            model, conv, temperature, max_tokens, api_dict=api_dict
+        )
+    if api_dict is None:
+        client = OpenAI()
+    else:
+        client = OpenAI(api_key=api_dict["api_key"], base_url=api_dict["api_base"])
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            messages = conv.to_openai_api_messages()
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                n=1,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            output = response.choices[0].message.content
+            break
+        except openai.OpenAIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+
+    return output
+
+
+def chat_completion_openai_depricated(
+    model, conv, temperature, max_tokens, api_dict=None
+):
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
@@ -429,6 +468,51 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
 
 
 def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
+    if LooseVersion(openai.__version__) < LooseVersion("1.0"):
+        return chat_completion_openai_azure_depricated(
+            model, conv, temperature, max_tokens, api_dict=api_dict
+        )
+    if api_dict is not None:
+        base = api_dict["api_base"]
+        key = api_dict["api_key"]
+    else:
+        base = os.environ["AZURE_OPENAI_ENDPOINT"]
+        key = os.environ["AZURE_OPENAI_KEY"]
+    client = AzureOpenAI(
+        api_key=key,
+        azure_endpoint=base,
+        api_version="2023-07-01-preview",
+    )
+
+    if "azure-" in model:
+        model = model[6:]
+
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            messages = conv.to_openai_api_messages()
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                n=1,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            output = response.choices[0].message.content
+            break
+        except openai.OpenAIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+        except KeyError:
+            print(response)
+            break
+
+    return output
+
+
+def chat_completion_openai_azure_depricated(
+    model, conv, temperature, max_tokens, api_dict=None
+):
     openai.api_type = "azure"
     openai.api_version = "2023-07-01-preview"
     if api_dict is not None:

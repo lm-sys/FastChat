@@ -25,7 +25,12 @@ from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MO
 
 
 def get_answer(
-    question: dict, model: str, num_choices: int, max_tokens: int, answer_file: str
+    question: dict,
+    model: str,
+    num_choices: int,
+    max_tokens: int,
+    answer_file: str,
+    api_dict: str = None,
 ):
     assert (
         args.force_temperature is not None and "required_temperature" in question.keys()
@@ -56,7 +61,9 @@ def get_answer(
                     chat_state, model, conv, temperature, max_tokens
                 )
             else:
-                output = chat_completion_openai(model, conv, temperature, max_tokens)
+                output = chat_completion_openai(
+                    model, conv, temperature, max_tokens, api_dict=api_dict
+                )
 
             conv.update_last_message(output)
             turns.append(output)
@@ -113,11 +120,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--parallel", type=int, default=1, help="The number of concurrent API calls."
     )
-    parser.add_argument("--openai-api-base", type=str, default=None)
+    parser.add_argument(
+        "--openai-api-base", type=str, default="https://api.openai.com/v1"
+    )
     args = parser.parse_args()
 
-    if args.openai_api_base is not None:
-        openai.api_base = args.openai_api_base
+    api_dict = {
+        "api_key": os.getenv("OPENAI_API_KEY", "random api key"),
+        "api_base": args.openai_api_base,
+    }
 
     question_file = f"data/{args.bench_name}/question.jsonl"
     questions = load_questions(question_file, args.question_begin, args.question_end)
@@ -138,6 +149,7 @@ if __name__ == "__main__":
                 args.num_choices,
                 args.max_tokens,
                 answer_file,
+                api_dict,
             )
             futures.append(future)
 
