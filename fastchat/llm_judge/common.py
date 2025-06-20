@@ -164,7 +164,10 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
     conv.append_message(conv.roles[1], None)
 
     if model in OPENAI_MODEL_LIST:
-        judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
+        # judgment = chat_completion_openai(model, conv, temperature=0, max_tokens=2048)
+        judgment = chat_completion_openai_azure(
+            model, conv, temperature=0, max_tokens=2048
+        )
     elif model in ANTHROPIC_MODEL_LIST:
         judgment = chat_completion_anthropic(
             model, conv, temperature=0, max_tokens=1024
@@ -430,7 +433,8 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
 
 def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
     openai.api_type = "azure"
-    openai.api_version = "2023-07-01-preview"
+    # openai.api_version = "2023-07-01-preview"
+    openai.api_version = "2023-12-01-preview"
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
