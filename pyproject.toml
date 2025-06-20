@@ -32,5 +32,8 @@ dev = ["black==23.3.0", "pylint==2.8.2"]
 [tool.setuptools.packages.find]
 exclude = ["assets*", "benchmark*", "docs", "dist*", "playground*", "scripts*", "tests*"]
 
+[tool.setuptools.package-data]
+"*" = ["fastchat/serve/example_images/*"]
+
 [tool.wheel]
 exclude = ["assets*", "benchmark*", "docs", "dist*", "playground*", "scripts*", "tests*"]
