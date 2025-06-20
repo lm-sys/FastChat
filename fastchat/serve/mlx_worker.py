@@ -285,4 +285,4 @@ if __name__ == "__main__":
         "MLX",
         args.conv_template,
     )
-    uvicorn.run(app, host=args.host, port=args.port, log_level="info")
+    uvicorn.run(app, host=args.host, port=args.port, log_level="info", use_colors=False)
