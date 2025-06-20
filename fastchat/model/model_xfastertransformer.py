@@ -1,8 +1,9 @@
 import gc
-from threading import Thread
-
+from threading import Thread, Lock
 import torch
 from transformers import TextIteratorStreamer
+
+lock = Lock()
 
 
 @torch.inference_mode()
@@ -16,18 +17,11 @@ def generate_stream_xft(
     judge_sent_end=False,
 ):
     prompt = params["prompt"]
-    repetition_penalty = float(params.get("repetition_penalty", 1.0))
-
-    # unused now, and placehold for future.
-    # temperature = float(params.get("temperature", 1.0))
-    # top_p = float(params.get("top_p", 1.0))
 
     max_new_tokens = int(params.get("max_new_tokens", 4096))
     echo = params.get("echo", True)
 
-    inputs = tokenizer(
-        prompt, return_tensors="pt", padding=model.config.padding
-    ).input_ids
+    inputs = tokenizer(prompt, return_tensors="pt").input_ids
     input_echo_len = len(inputs[0])
     max_len = max_new_tokens + input_echo_len
 
@@ -38,17 +32,29 @@ def generate_stream_xft(
         "streamer": streamer,
         "max_length": max_len,
         "num_beams": model.config.beam_width,
-        "length_penalty": repetition_penalty,
-        "num_return_sequences": model.config.num_return_sequences,
-        "early_stopping": model.config.early_stopping,
-        "eos_token_id": model.config.eos_token_id,
-        "pad_token_id": model.config.pad_token_id,
     }
-
+    if model.config.eos_token_id != -1:
+        generation_kwargs["eos_token_id"] = model.config.eos_token_id
+    if model.config.pad_token_id != -1:
+        generation_kwargs["pad_token_id"] = model.config.pad_token_id
+    if model.config.stop_words_ids is not None:
+        generation_kwargs["stop_words_ids"] = model.config.stop_words_ids
+    if model.config.do_sample:
+        generation_kwargs["do_sample"] = True
+    if model.config.temperature > 0:
+        generation_kwargs["temperature"] = model.config.temperature
+    if model.config.top_p > 0:
+        generation_kwargs["top_p"] = model.config.top_p
+    if model.config.top_k > 0:
+        generation_kwargs["top_k"] = model.config.top_k
+    if model.config.repetition_penalty > 0:
+        generation_kwargs["repetition_penalty"] = model.config.repetition_penalty
+    if model.config.early_stopping:
+        generation_kwargs["early_stopping"] = model.config.early_stopping
     thread = Thread(target=model.model.generate, kwargs=generation_kwargs)
+    lock.acquire()
     thread.start()
     if echo:
-        # means keep the prompt
         output = prompt
     else:
         output = ""
@@ -78,4 +84,6 @@ def generate_stream_xft(
         },
         "finish_reason": finish_reason,
     }
+    lock.release()
+    thread.join()
     gc.collect()
