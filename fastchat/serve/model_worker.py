@@ -89,6 +89,7 @@ class ModelWorker(BaseModelWorker):
             xft_config=xft_config,
             debug=debug,
         )
+        self.model_path = model_path
         self.device = device
         if self.tokenizer.pad_token == None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -165,6 +166,9 @@ class ModelWorker(BaseModelWorker):
             else:
                 data = model_output.hidden_states[-1]
 
+        #import pdb
+        #pdb.set_trace()
+        #sum_embeddings = data[:, 0]
         if hasattr(self.model, "use_cls_pooling") and self.model.use_cls_pooling:
             sum_embeddings = data[:, 0]
         else:
@@ -245,9 +249,10 @@ class ModelWorker(BaseModelWorker):
                             )
                             + tokenizer.cls_token_id
                         )
-                        chunk_input_ids = torch.cat(
-                            [cls_tokens, chunk_input_ids], dim=-1
-                        )
+                        if "bge-m3" not in self.model_path.lower():
+                            chunk_input_ids = torch.cat(
+                                [cls_tokens, chunk_input_ids], dim=-1
+                            )
                         mask = torch.ones(
                             (chunk_attention_mask.size(0), 1),
                             dtype=chunk_attention_mask.dtype,
@@ -260,6 +265,8 @@ class ModelWorker(BaseModelWorker):
                     chunk_embeddings, token_num = self.__process_embed_chunk(
                         chunk_input_ids, chunk_attention_mask, **model_type_dict
                     )
+                    import pdb
+                    pdb.set_trace()
                     if (
                         hasattr(self.model, "use_cls_pooling")
                         and self.model.use_cls_pooling
@@ -271,6 +278,8 @@ class ModelWorker(BaseModelWorker):
 
                 all_embeddings_tensor = torch.stack(all_embeddings)
                 embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
+                import pdb
+                pdb.set_trace()
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
 
                 ret["token_num"] = all_token_num
