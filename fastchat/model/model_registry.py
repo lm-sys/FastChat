@@ -133,8 +133,11 @@ register_model_info(
 )
 
 register_model_info(
-    ["jamba-1.5-large", "jamba-1.5-mini"],
-    "Jamba 1.5",
+    [
+        "jamba-large-1.6-2025-03",
+        "jamba-mini-1.6-2025-03",
+    ],
+    "Jamba",
     "https://www.ai21.com/jamba",
     "Jamba by AI21 Labs",
 )
