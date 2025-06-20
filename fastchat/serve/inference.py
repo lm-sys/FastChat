@@ -39,7 +39,12 @@ from fastchat.modules.awq import AWQConfig
 from fastchat.modules.gptq import GptqConfig
 from fastchat.modules.exllama import ExllamaConfig
 from fastchat.modules.xfastertransformer import XftConfig
-from fastchat.utils import is_partial_stop, is_sentence_complete, get_context_length
+from fastchat.utils import (
+    is_partial_stop,
+    is_sentence_complete,
+    get_context_length,
+    compile_stop_pattern,
+)
 
 
 def prepare_logits_processor(
@@ -113,6 +118,21 @@ def generate_stream(
         )
     else:
         start_ids = torch.as_tensor([input_ids], device=device)
+
+    stop_pattern = None
+    max_stop_len = 0
+    if stop_str:
+        if isinstance(stop_str, str):
+            stop_str = [stop_str]
+        if not isinstance(stop_str, Iterable):
+            raise ValueError("Invalid stop field type.")
+        max_stop_len = max(len(s) for s in stop_str)
+        stop_pattern = compile_stop_pattern(stop_str)
+
+    if echo:
+        rfind_start = len_prompt
+    else:
+        rfind_start = 0
 
     past_key_values = out = None
     token_logprobs = [None]  # The first token has no logprobs.
@@ -206,10 +226,8 @@ def generate_stream(
         if i % stream_interval == 0 or i == max_new_tokens - 1 or stopped:
             if echo:
                 tmp_output_ids = output_ids
-                rfind_start = len_prompt
             else:
                 tmp_output_ids = output_ids[input_echo_len:]
-                rfind_start = 0
 
             output = tokenizer.decode(
                 tmp_output_ids,
@@ -239,6 +257,21 @@ def generate_stream(
                     ret_logprobs["text_offset"].append(curr_pos)
                     curr_pos += len(text)
 
+            partially_stopped = False
+            if stop_pattern:
+                out_len = len(output)
+                check_lend = max(rfind_start, out_len - 2 * max_stop_len)
+                output_tocheck = output[check_lend:]
+                match = stop_pattern.search(output_tocheck)
+                if match:
+                    output = output[: check_lend + match.start()]
+                    stopped = True
+                else:
+                    for stop_sign in stop_str:
+                        if is_partial_stop(output_tocheck, stop_sign):
+                            partially_stopped = True
+                            break
+
             # TODO: For the issue of incomplete sentences interrupting output, apply a patch and others can also modify it to a more elegant way
             if judge_sent_end and stopped and not is_sentence_complete(output):
                 if len(tokens) > 1:
@@ -248,29 +281,6 @@ def generate_stream(
                     output_ids.pop()
                 stopped = False
                 sent_interrupt = True
-
-            partially_stopped = False
-            if stop_str:
-                if isinstance(stop_str, str):
-                    pos = output.rfind(stop_str, rfind_start)
-                    if pos != -1:
-                        output = output[:pos]
-                        stopped = True
-                    else:
-                        partially_stopped = is_partial_stop(output, stop_str)
-                elif isinstance(stop_str, Iterable):
-                    for each_stop in stop_str:
-                        pos = output.rfind(each_stop, rfind_start)
-                        if pos != -1:
-                            output = output[:pos]
-                            stopped = True
-                            break
-                        else:
-                            partially_stopped = is_partial_stop(output, each_stop)
-                            if partially_stopped:
-                                break
-                else:
-                    raise ValueError("Invalid stop field type.")
 
             # Prevent yielding partial stop sequence
             if not partially_stopped:
