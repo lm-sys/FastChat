@@ -46,7 +46,8 @@ if __name__ == "__main__":
     parser.add_argument("--first-n", type=int)
     args = parser.parse_args()
 
-    battles = json.load(open(args.input))
+    with open(args.input) as f:
+        battles = json.load(f)
 
     if args.first_n:
         battles = battles[: args.first_n]

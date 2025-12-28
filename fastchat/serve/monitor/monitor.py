@@ -86,7 +86,11 @@ def update_elo_components(
 
     # Leaderboard
     if elo_results_file is None:  # Do live update
-        ban_ip_list = json.load(open(ban_ip_file)) if ban_ip_file else None
+        if ban_ip_file:
+            with open(ban_ip_file) as f:
+                ban_ip_list = json.load(f)
+        else:
+            ban_ip_list = None
         battles = clean_battle_data(
             log_files, exclude_model_names, ban_ip_list=ban_ip_list
         )

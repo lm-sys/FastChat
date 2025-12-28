@@ -15,11 +15,14 @@ if __name__ == "__main__":
     parser.add_argument("--out-file", type=str, default="intersect.json")
     args = parser.parse_args()
 
-    conv_id_objs = json.load(open(args.conv_id, "r"))
+    with open(args.conv_id, "r") as f:
+        conv_id_objs = json.load(f)
     conv_ids = set(x["conversation_id"] for x in conv_id_objs)
 
-    objs = json.load(open(args.input, "r"))
+    with open(args.input, "r") as f:
+        objs = json.load(f)
     after_objs = [x for x in objs if x["conversation_id"] in conv_ids]
 
     print(f"#in: {len(objs)}, #out: {len(after_objs)}")
-    json.dump(after_objs, open(args.out_file, "w"), indent=2, ensure_ascii=False)
+    with open(args.out_file, "w") as f:
+        json.dump(after_objs, f, indent=2, ensure_ascii=False)

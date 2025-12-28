@@ -385,7 +385,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     log_files = get_log_files(args.max_num_files)
-    ban_ip_list = json.load(open(args.ban_ip_file)) if args.ban_ip_file else None
+    if args.ban_ip_file:
+        with open(args.ban_ip_file) as f:
+            ban_ip_list = json.load(f)
+    else:
+        ban_ip_list = None
 
     battles = clean_battle_data(
         log_files, args.exclude_model_names or [], ban_ip_list, args.sanitize_ip
