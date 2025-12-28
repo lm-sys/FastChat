@@ -304,7 +304,7 @@ async def get_gen_params(
             if msg_role == "system":
                 conv.set_system_message(message["content"])
             elif msg_role == "user":
-                if type(message["content"]) == list:
+                if isinstance(message["content"], list):
                     image_list = [
                         item["image_url"]["url"]
                         for item in message["content"]
@@ -392,6 +392,12 @@ async def get_conv(model_name: str, worker_addr: str):
         )
         conv_template_map[(worker_addr, model_name)] = conv_template
     return conv_template
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for load balancers and orchestration systems."""
+    return {"status": "ok"}
 
 
 @app.get("/v1/models", dependencies=[Depends(check_api_key)])
