@@ -34,7 +34,8 @@ def read_texts(input_file, min_length, max_length, english_only):
     visited = set()
     texts = []
 
-    lines = json.load(open(input_file, "r"))
+    with open(input_file, "r") as f:
+        lines = json.load(f)
 
     for l in tqdm(lines):
         if "text" in l:

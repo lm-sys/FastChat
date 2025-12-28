@@ -224,7 +224,8 @@ def get_model_list(controller_url, register_api_endpoint_file, vision_arena):
 
     # Add models from the API providers
     if register_api_endpoint_file:
-        api_endpoint_info = json.load(open(register_api_endpoint_file))
+        with open(register_api_endpoint_file) as f:
+            api_endpoint_info = json.load(f)
         for mdl, mdl_dict in api_endpoint_info.items():
             mdl_vision = mdl_dict.get("vision-arena", False)
             mdl_text = mdl_dict.get("text-arena", True)
