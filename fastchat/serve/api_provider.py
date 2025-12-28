@@ -1262,9 +1262,9 @@ def reka_api_stream_iter(
     for chunk in response:
         try:
             yield {"text": chunk.responses[0].chunk.content, "error_code": 0}
-        except:
+        except (IndexError, AttributeError, KeyError) as e:
             yield {
-                "text": f"**API REQUEST ERROR** ",
+                "text": f"**API REQUEST ERROR** {e}",
                 "error_code": 1,
             }
 

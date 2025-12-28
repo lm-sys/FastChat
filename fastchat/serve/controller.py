@@ -346,8 +346,14 @@ async def worker_api_get_status(request: Request):
 
 
 @app.get("/test_connection")
-async def worker_api_get_status(request: Request):
+async def test_connection(request: Request):
     return "success"
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for load balancers and orchestration systems."""
+    return {"status": "ok"}
 
 
 def create_controller():
