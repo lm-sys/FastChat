@@ -91,6 +91,10 @@ register_model_info(
 
 register_model_info(
     [
+        "gemini-2.5-flash-preview-09-2025",
+        "gemini-2.5-flash-preview-05-20",
+        "gemini-2.5-flash",
+        "gemini-2.5-pro",
         "gemini-1.5-pro-exp-0827",
         "gemini-1.5-pro-exp-0801",
         "gemini-1.5-flash-exp-0827",

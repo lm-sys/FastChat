@@ -13,11 +13,13 @@ from typing import Optional
 
 import openai
 import anthropic
+from google import genai
 
 from fastchat.model.model_adapter import (
     get_conversation_template,
     ANTHROPIC_MODEL_LIST,
     OPENAI_MODEL_LIST,
+    GOOGLE_MODEL_LIST,
 )
 
 # API setting constants
@@ -169,6 +171,8 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
         judgment = chat_completion_anthropic(
             model, conv, temperature=0, max_tokens=1024
         )
+    elif model in GOOGLE_MODEL_LIST:
+        judgment = chat_completion_google(model, conv, temperature=0, max_tokens=2048)
     else:
         raise ValueError(f"Invalid judge model name: {model}")
 
@@ -488,6 +492,35 @@ def chat_completion_anthropic(model, conv, temperature, max_tokens, api_dict=Non
             output = response.completion
             break
         except anthropic.APIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
+    return output.strip()
+
+
+def chat_completion_google(model, conv, temperature, max_tokens, api_dict=None):
+    if api_dict is not None and "api_key" in api_dict:
+        api_key = api_dict["api_key"]
+    else:
+        api_key = os.environ["GOOGLE_API_KEY"]
+
+    output = API_ERROR_OUTPUT
+    for _ in range(API_MAX_RETRY):
+        try:
+            client = genai.Client(api_key=api_key)
+            prompt = conv.get_prompt()
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config={
+                    "max_output_tokens": max_tokens,
+                    "temperature": temperature,
+                },
+            )
+            output = response.text
+            if output is None:
+                output = ""
+            break
+        except genai.errors.APIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
     return output.strip()

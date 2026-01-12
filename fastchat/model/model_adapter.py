@@ -93,6 +93,12 @@ OPENAI_MODEL_LIST = (
     "o1-mini",
 )
 
+GOOGLE_MODEL_LIST = (
+    "gemini-2.5-flash-preview-09-2025",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+)
+
 
 class BaseModelAdapter:
     """The base and the default model adapter."""
@@ -2244,6 +2250,10 @@ class GeminiAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         if "gemini-1.5-pro" in model_path:
             return get_conv_template("gemini-1.5-pro")
+        elif "gemini-2.5-flash" in model_path:
+            return get_conv_template("gemini-2.5-flash")
+        elif "gemini-2.5-pro" in model_path:
+            return get_conv_template("gemini-2.5-pro")
         return get_conv_template("gemini")
 
 

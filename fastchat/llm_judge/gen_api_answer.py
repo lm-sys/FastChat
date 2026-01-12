@@ -18,10 +18,15 @@ from fastchat.llm_judge.common import (
     temperature_config,
     chat_completion_openai,
     chat_completion_anthropic,
+    chat_completion_google,
     chat_completion_palm,
 )
 from fastchat.llm_judge.gen_model_answer import reorg_answer_file
-from fastchat.model.model_adapter import get_conversation_template, ANTHROPIC_MODEL_LIST
+from fastchat.model.model_adapter import (
+    get_conversation_template,
+    ANTHROPIC_MODEL_LIST,
+    GOOGLE_MODEL_LIST,
+)
 
 
 def get_answer(
@@ -55,6 +60,8 @@ def get_answer(
                 chat_state, output = chat_completion_palm(
                     chat_state, model, conv, temperature, max_tokens
                 )
+            elif model in GOOGLE_MODEL_LIST:
+                output = chat_completion_google(model, conv, temperature, max_tokens)
             else:
                 output = chat_completion_openai(model, conv, temperature, max_tokens)
 
