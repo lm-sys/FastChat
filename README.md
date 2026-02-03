@@ -378,3 +378,5 @@ Please cite it if you find the repository helpful.
 ```
 
 We are also planning to add more of our research to this repository.
+
+- [AgentMarket](https://agentmarket.cloud) - B2A marketplace for AI agents. Real energy data (28M+ records). Free API.
