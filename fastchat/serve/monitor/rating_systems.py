@@ -58,7 +58,7 @@ def preprocess_for_bt(df):
     # map 2 -> 1.0, 1 -> 0.5, 0 -> 0.0 which will be used as labels during optimization
     outcomes = matchups_outcomes[:, 2].astype(np.float64) / 2.0
     weights = weights.astype(np.float64)
-    # each possible result is weighted according to number of times it occured in the dataset
+    # each possible result is weighted according to number of times it occurred in the dataset
     return matchups, outcomes, models, weights
 
 
