@@ -454,12 +454,12 @@ def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=
             )
             output = response["choices"][0]["message"]["content"]
             break
-        except openai.error.OpenAIError as e:
-            print(type(e), e)
-            time.sleep(API_RETRY_SLEEP)
         except openai.error.InvalidRequestError as e:
             print(type(e), e)
             break
+        except openai.error.OpenAIError as e:
+            print(type(e), e)
+            time.sleep(API_RETRY_SLEEP)
         except KeyError:
             print(response)
             break
