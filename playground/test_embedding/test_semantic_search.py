@@ -11,7 +11,7 @@ from scipy.spatial.distance import cosine
 def cosine_similarity(vec1, vec2):
     try:
         return 1 - cosine(vec1, vec2)
-    except:
+    except Exception:
         print(vec1.shape, vec2.shape)
 
 

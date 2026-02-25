@@ -450,7 +450,7 @@ def image_moderation_request(image_bytes, endpoint, api_key):
         try:
             if response["Status"]["Code"] == 3000:
                 break
-        except:
+        except Exception:
             time.sleep(0.5)
     return response
 
