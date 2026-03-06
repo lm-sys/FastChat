@@ -1000,3 +1000,14 @@ register_model_info(
     "https://huggingface.co/cllm",
     "consistency-llm is a new generation of parallel decoder LLMs with fast generation speed.",
 )
+
+# ── OVA (Multi-Model Debate) ─────────────────────────────────────────────────
+register_model_info(
+    ["ova-debate", "ova-arena"],
+    "OVA (Multi-Model Debate)",
+    "https://ovamind.ai",
+    "OVA is a meta-reasoning system that runs structured multi-agent debate "
+    "across Claude, GPT, Grok, Gemini, and Perplexity before synthesizing a "
+    "final answer. Confidence-adaptive: 3 rounds for standard queries, up to 9 "
+    "rounds with axiom decomposition and frame-breaking for hard problems.",
+)

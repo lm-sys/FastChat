@@ -1,0 +1,15 @@
+{
+  "ova-debate": {
+    "model_name": "ova-debate",
+    "api_type": "openai",
+    "api_base": "https://ovamind-production.up.railway.app/api/v1",
+    "api_key": "sk_ova_arena_lmarena2026",
+    "anony_only": false,
+    "recommended_config": {
+      "temperature": 0.3,
+      "top_p": 1.0
+    },
+    "text-arena": true,
+    "vision-arena": false
+  }
+}
