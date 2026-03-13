@@ -8,6 +8,7 @@ import json
 import logging
 import logging.handlers
 import os
+import re
 import platform
 import sys
 import time
@@ -52,8 +53,8 @@ def build_logger(logger_name, logger_filename):
     sys.stdout = sl
 
     stderr_logger = logging.getLogger("stderr")
-    stderr_logger.setLevel(logging.ERROR)
-    sl = StreamToLogger(stderr_logger, logging.ERROR)
+    stderr_logger.setLevel(logging.INFO)
+    sl = StreamToLogger(stderr_logger, logging.INFO)
     sys.stderr = sl
 
     # Get logger
@@ -86,6 +87,19 @@ class StreamToLogger(object):
     Fake file-like stream object that redirects writes to a logger instance.
     """
 
+    # Pattern to detect log level prefixes from libraries like uvicorn
+    # e.g. "INFO:     Started server process [19332]"
+    _level_pattern = re.compile(
+        r"^(DEBUG|INFO|WARNING|ERROR|CRITICAL):\s+(.*)$", re.IGNORECASE
+    )
+    _level_map = {
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+
     def __init__(self, logger, log_level=logging.INFO):
         self.terminal = sys.stdout
         self.logger = logger
@@ -94,6 +108,17 @@ class StreamToLogger(object):
 
     def __getattr__(self, attr):
         return getattr(self.terminal, attr)
+
+    def _detect_log_level(self, message):
+        """Detect log level from message prefix (e.g. uvicorn's 'INFO:' prefix).
+
+        Returns (detected_level, cleaned_message).
+        """
+        match = self._level_pattern.match(message.strip())
+        if match:
+            level_name = match.group(1).upper()
+            return self._level_map.get(level_name, self.log_level), message
+        return self.log_level, message
 
     def write(self, buf):
         temp_linebuf = self.linebuf + buf
@@ -106,14 +131,16 @@ class StreamToLogger(object):
             # translates them so this is still cross platform.
             if line[-1] == "\n":
                 encoded_message = line.encode("utf-8", "ignore").decode("utf-8")
-                self.logger.log(self.log_level, encoded_message.rstrip())
+                level, message = self._detect_log_level(encoded_message.rstrip())
+                self.logger.log(level, message)
             else:
                 self.linebuf += line
 
     def flush(self):
         if self.linebuf != "":
             encoded_message = self.linebuf.encode("utf-8", "ignore").decode("utf-8")
-            self.logger.log(self.log_level, encoded_message.rstrip())
+            level, message = self._detect_log_level(encoded_message.rstrip())
+            self.logger.log(level, message)
         self.linebuf = ""
 
 
