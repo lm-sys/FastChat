@@ -52,8 +52,8 @@ def build_logger(logger_name, logger_filename):
     sys.stdout = sl
 
     stderr_logger = logging.getLogger("stderr")
-    stderr_logger.setLevel(logging.ERROR)
-    sl = StreamToLogger(stderr_logger, logging.ERROR)
+    stderr_logger.setLevel(logging.INFO)
+    sl = StreamToLogger(stderr_logger, logging.WARNING)
     sys.stderr = sl
 
     # Get logger
