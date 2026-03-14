@@ -1,6 +1,9 @@
 FROM nvidia/cuda:12.2.0-runtime-ubuntu20.04
 
-RUN apt-get update -y && apt-get install -y python3.9 python3.9-distutils curl
+RUN apt-get update -y && apt-get install -y python3.9 python3.9-distutils curl tzdata
+# Non-interactive tzdata configuration
+RUN echo 'Etc/UTC' > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
+
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 RUN python3.9 get-pip.py
 RUN pip3 install fschat
