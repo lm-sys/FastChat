@@ -5,6 +5,12 @@ python3 show_result.py --mode [single|pairwise-baseline|pairwise-all]
 import argparse
 import pandas as pd
 
+from fastchat.llm_judge.compute_agreement import (
+    compute_position_bias,
+    compute_cohens_kappa,
+    interpret_kappa,
+)
+
 
 def display_result_single(args):
     if args.input_file is None:
@@ -91,6 +97,57 @@ def display_result_pairwise(args):
     # print(df.sort_values(by="loss_rate", ascending=True))
     print(df.sort_values(by="win_rate_adjusted", ascending=False))
 
+    # Print one-line consistency summary
+    g1_winners = df_all["g1_winner"].tolist()
+    g2_winners = df_all["g2_winner"].tolist()
+    bias_rate, _ = compute_position_bias(g1_winners, g2_winners)
+    kappa = compute_cohens_kappa(g1_winners, g2_winners)
+    print(
+        f"\n[Consistency] position bias: {bias_rate:.1%}, "
+        f"Cohen's kappa: {kappa:.3f} ({interpret_kappa(kappa)})"
+    )
+
+
+def display_consistency_metrics(args):
+    """Display detailed position bias and Cohen's kappa metrics."""
+    if args.input_file is None:
+        input_file = (
+            f"data/{args.bench_name}/model_judgment/{args.judge_model}_pair.jsonl"
+        )
+    else:
+        input_file = args.input_file
+
+    print(f"Input file: {input_file}")
+    df_all = pd.read_json(input_file, lines=True)
+    df_all = df_all[(df_all["g1_winner"] != "error") & (df_all["g2_winner"] != "error")]
+
+    g1_winners = df_all["g1_winner"].tolist()
+    g2_winners = df_all["g2_winner"].tolist()
+    total = len(g1_winners)
+
+    if total == 0:
+        print("No valid judgments found.")
+        return
+
+    # Position bias
+    bias_rate, direction = compute_position_bias(g1_winners, g2_winners)
+
+    # Cohen's kappa
+    kappa = compute_cohens_kappa(g1_winners, g2_winners)
+    interpretation = interpret_kappa(kappa)
+
+    # Simple agreement
+    agree = sum(1 for g1, g2 in zip(g1_winners, g2_winners) if g1 == g2)
+    agree_rate = agree / total
+
+    print(f"\n########## Consistency Metrics ##########")
+    print(f"Total pairs:             {total}")
+    print(f"Agreement rate:          {agree_rate:.1%} ({agree}/{total})")
+    print(f"Position bias rate:      {bias_rate:.1%}")
+    print(f"Position bias direction: {direction}")
+    print(f"Cohen's kappa:           {kappa:.3f}")
+    print(f"Interpretation:          {interpretation} (Landis & Koch)")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -117,14 +174,22 @@ if __name__ == "__main__":
             "`single` runs single answer grading."
         ),
     )
+    parser.add_argument(
+        "--show-consistency",
+        action="store_true",
+        help="Show detailed position bias and Cohen's kappa metrics.",
+    )
     args = parser.parse_args()
 
-    if args.mode == "single":
+    if args.show_consistency:
+        display_consistency_metrics(args)
+    elif args.mode == "single":
         display_result_func = display_result_single
+        print(f"Mode: {args.mode}")
+        display_result_func(args)
     else:
         if args.mode == "pairwise-all":
             args.baseline_model = None
         display_result_func = display_result_pairwise
-
-    print(f"Mode: {args.mode}")
-    display_result_func(args)
+        print(f"Mode: {args.mode}")
+        display_result_func(args)

@@ -98,6 +98,97 @@ def get_mt_bench_agreement(data, judge1, judge2, ban):
         raise Exception("Unsupported judges.")
 
 
+def compute_position_bias(g1_winners, g2_winners):
+    """Compute position bias rate and direction from paired judgments.
+
+    Args:
+        g1_winners: list of winners from game 1 (original order).
+        g2_winners: list of winners from game 2 (swapped order).
+
+    Returns:
+        bias_rate: fraction of pairs where g1 and g2 disagree.
+        direction: "first" if judge favors position A, "second" if position B,
+                   "none" if balanced or no bias detected.
+    """
+    total = len(g1_winners)
+    if total == 0:
+        return 0.0, "none"
+
+    disagree = 0
+    favor_first = 0  # g1 says model_1, g2 says model_2 (both favor position A)
+    favor_second = 0
+    for g1, g2 in zip(g1_winners, g2_winners):
+        if g1 != g2:
+            disagree += 1
+            # g1: model_1 in position A; g2: model_2 in position A
+            # If g1=model_1 and g2=model_2, judge always picked position A
+            if g1 == "model_1" and g2 == "model_2":
+                favor_first += 1
+            elif g1 == "model_2" and g2 == "model_1":
+                favor_second += 1
+
+    bias_rate = disagree / total
+    if favor_first > favor_second:
+        direction = "first"
+    elif favor_second > favor_first:
+        direction = "second"
+    else:
+        direction = "none"
+
+    return bias_rate, direction
+
+
+def compute_cohens_kappa(g1_winners, g2_winners):
+    """Compute Cohen's kappa treating game1 and game2 as two raters.
+
+    Categories: model_1, model_2, tie.
+
+    Args:
+        g1_winners: list of winners from game 1.
+        g2_winners: list of winners from game 2.
+
+    Returns:
+        kappa: Cohen's kappa coefficient.
+    """
+    categories = ["model_1", "model_2", "tie"]
+    total = len(g1_winners)
+    if total == 0:
+        return 0.0
+
+    # Observed agreement
+    agree = sum(1 for g1, g2 in zip(g1_winners, g2_winners) if g1 == g2)
+    p_o = agree / total
+
+    # Expected agreement by chance
+    p_e = 0.0
+    for cat in categories:
+        p1 = sum(1 for g in g1_winners if g == cat) / total
+        p2 = sum(1 for g in g2_winners if g == cat) / total
+        p_e += p1 * p2
+
+    if p_e == 1.0:
+        return 1.0
+
+    kappa = (p_o - p_e) / (1.0 - p_e)
+    return kappa
+
+
+def interpret_kappa(kappa):
+    """Interpret kappa using the Landis & Koch scale."""
+    if kappa < 0.0:
+        return "poor"
+    elif kappa < 0.21:
+        return "slight"
+    elif kappa < 0.41:
+        return "fair"
+    elif kappa < 0.61:
+        return "moderate"
+    elif kappa < 0.81:
+        return "substantial"
+    else:
+        return "almost perfect"
+
+
 def run_mt_bench_agreement(judges, votefiles):
     # votes[i]: List of votes
     votes = []
