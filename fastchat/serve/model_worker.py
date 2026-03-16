@@ -273,7 +273,11 @@ class ModelWorker(BaseModelWorker):
                 embedding = torch.sum(all_embeddings_tensor, dim=0) / all_token_num
                 normalized_embeddings = F.normalize(embedding, p=2, dim=1)
 
-                ret["token_num"] = all_token_num.sum().item() if isinstance(all_token_num, torch.Tensor) else all_token_num
+                ret["token_num"] = (
+                    all_token_num.sum().item()
+                    if isinstance(all_token_num, torch.Tensor)
+                    else all_token_num
+                )
 
             if base64_encode == "base64":
                 out_embeddings = self.__encode_base64(normalized_embeddings)
