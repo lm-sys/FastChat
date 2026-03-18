@@ -886,7 +886,7 @@ def get_combined_table(elo_results, model_table_df):
                 "Model"
             ].values[0]
             return model_name
-        except:
+        except (KeyError, IndexError, TypeError):
             return None
 
     combined_table = []
