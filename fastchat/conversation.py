@@ -374,9 +374,7 @@ class Conversation:
                         img_str = f'<img src="{html.escape(image.url)}" alt="user upload image" />'
                     elif image.image_format == ImageFormat.BYTES:
                         img_str = f'<img src="data:image/{html.escape(image.filetype)};base64,{image.base64_str}" alt="user upload image" />'
-                    msg = img_str + html.escape(
-                        msg.replace("<image>\n", "").strip()
-                    )
+                    msg = img_str + html.escape(msg.replace("<image>\n", "").strip())
                 else:
                     if msg is not None:
                         msg = html.escape(msg)
