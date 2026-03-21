@@ -927,6 +927,7 @@ def build_single_model_ui(models, add_promotion_links=False):
             label="Scroll down and start chatting",
             height=650,
             show_copy_button=True,
+            sanitize_html=True,
             latex_delimiters=[
                 {"left": "$", "right": "$", "display": False},
                 {"left": "$$", "right": "$$", "display": True},

@@ -8,6 +8,7 @@ If you have any changes in mind, please contribute back so the community can ben
 import base64
 import dataclasses
 from enum import auto, IntEnum
+import html
 from io import BytesIO
 import os
 from typing import List, Any, Dict, Union, Tuple
@@ -370,13 +371,20 @@ class Conversation:
                     msg, images = msg
                     image = images[0]  # Only one image on gradio at one time
                     if image.image_format == ImageFormat.URL:
-                        img_str = f'<img src="{image.url}" alt="user upload image" />'
+                        img_str = f'<img src="{html.escape(image.url)}" alt="user upload image" />'
                     elif image.image_format == ImageFormat.BYTES:
-                        img_str = f'<img src="data:image/{image.filetype};base64,{image.base64_str}" alt="user upload image" />'
-                    msg = img_str + msg.replace("<image>\n", "").strip()
+                        img_str = f'<img src="data:image/{html.escape(image.filetype)};base64,{image.base64_str}" alt="user upload image" />'
+                    msg = img_str + html.escape(
+                        msg.replace("<image>\n", "").strip()
+                    )
+                else:
+                    if msg is not None:
+                        msg = html.escape(msg)
 
                 ret.append([msg, None])
             else:
+                if msg is not None:
+                    msg = html.escape(msg)
                 ret[-1][-1] = msg
         return ret
 
