@@ -49,9 +49,10 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
         client = openai.OpenAI(
             base_url=api_dict["api_base"],
             api_key=api_dict["api_key"],
+            timeout=60.0,
         )
     else:
-        client = openai.OpenAI()
+        client = openai.OpenAI(timeout=60.0)
 
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
@@ -105,7 +106,7 @@ def chat_completion_anthropic(model, messages, temperature, max_tokens, api_dict
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
-            c = anthropic.Anthropic(api_key=api_key)
+            c = anthropic.Anthropic(api_key=api_key, timeout=60.0)
             response = c.messages.create(
                 model=model,
                 messages=messages,

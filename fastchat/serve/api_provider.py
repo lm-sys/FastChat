@@ -285,6 +285,7 @@ def openai_api_stream_iter(
             api_version="2023-07-01-preview",
             azure_endpoint=api_base or "https://api.openai.com/v1",
             api_key=api_key,
+            timeout=180,
         )
     else:
         client = openai.OpenAI(
@@ -518,7 +519,7 @@ def openai_assistant_api_stream_iter(
     import base64
 
     api_key = api_key or os.environ["OPENAI_API_KEY"]
-    client = openai.OpenAI(base_url="https://api.openai.com/v1", api_key=api_key)
+    client = openai.OpenAI(base_url="https://api.openai.com/v1", api_key=api_key, timeout=60.0)
 
     if state.oai_thread_id is None:
         logger.info("==== create thread ====")
@@ -651,7 +652,7 @@ def openai_assistant_api_stream_iter(
 def anthropic_api_stream_iter(model_name, prompt, temperature, top_p, max_new_tokens):
     import anthropic
 
-    c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    c = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=60.0)
 
     # Make requests
     gen_params = {
@@ -697,11 +698,13 @@ def anthropic_message_api_stream_iter(
             region=os.environ["GCP_LOCATION"],
             project_id=os.environ["GCP_PROJECT_ID"],
             max_retries=5,
+            timeout=60.0,
         )
     else:
         client = anthropic.Anthropic(
             api_key=os.environ["ANTHROPIC_API_KEY"],
             max_retries=5,
+            timeout=60.0,
         )
 
     text_messages = []
