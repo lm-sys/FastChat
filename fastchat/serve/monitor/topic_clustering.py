@@ -81,7 +81,7 @@ def read_texts(input_file, min_length, max_length, english_only):
 
 def get_embeddings(texts, model_name, batch_size):
     if model_name == "text-embedding-ada-002":
-        client = OpenAI(timeout=60.0)
+        client = OpenAI(timeout=60.0, max_retries=3)
         texts = texts.tolist()
 
         embeddings = []

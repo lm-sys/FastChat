@@ -75,9 +75,10 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
             base_url=api_dict["api_base"],
             api_key=api_dict["api_key"],
             timeout=60.0,
+        max_retries=3,
         )
     else:
-        client = openai.OpenAI(timeout=60.0)
+        client = openai.OpenAI(timeout=60.0, max_retries=3)
 
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
