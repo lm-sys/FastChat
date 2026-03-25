@@ -476,7 +476,7 @@ def chat_completion_anthropic(model, conv, temperature, max_tokens, api_dict=Non
     output = API_ERROR_OUTPUT
     for _ in range(API_MAX_RETRY):
         try:
-            c = anthropic.Anthropic(api_key=api_key)
+            c = anthropic.Anthropic(api_key=api_key, timeout=60.0, max_retries=3)
             prompt = conv.get_prompt()
             response = c.completions.create(
                 model=model,

@@ -155,7 +155,7 @@ def oai_moderation(text, custom_thresholds=None):
     """
     import openai
 
-    client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    client = openai.OpenAI(api_key=os.environ["OPENAI_API_KEY"], timeout=60.0, max_retries=3)
 
     # default to true to be conservative
     flagged = True
