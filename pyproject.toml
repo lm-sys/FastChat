@@ -23,6 +23,7 @@ model_worker = ["accelerate>=0.21", "peft", "sentencepiece", "torch", "transform
 webui = ["gradio>=4.10", "plotly", "scipy"]
 train = ["einops", "flash-attn>=2.0", "wandb"]
 llm_judge = ["openai<1", "anthropic>=0.3", "ray"]
+gguf = ["llama-cpp-python>=0.2.0"]
 dev = ["black==23.3.0", "pylint==2.8.2"]
 
 [project.urls]
