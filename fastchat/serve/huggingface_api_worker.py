@@ -233,7 +233,7 @@ async def api_generate(request: Request):
     params = await request.json()
     worker = worker_map[params["model"]]
     await acquire_worker_semaphore(worker)
-    output = worker.generate_gate(params)
+    output = await asyncio.to_thread(worker.generate_gate, params)
     release_worker_semaphore(worker)
     return JSONResponse(output)
 
