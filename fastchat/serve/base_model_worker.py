@@ -215,7 +215,7 @@ async def api_generate(request: Request):
 async def api_get_embeddings(request: Request):
     params = await request.json()
     await acquire_worker_semaphore()
-    embedding = worker.get_embeddings(params)
+    embedding = await asyncio.to_thread(worker.get_embeddings, params)
     release_worker_semaphore()
     return JSONResponse(content=embedding)
 
