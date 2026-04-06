@@ -144,6 +144,7 @@ class ModelWorker(BaseModelWorker):
             yield json.dumps(ret).encode() + b"\0"
 
     def generate_gate(self, params):
+        x = b"{}\0"
         for x in self.generate_stream_gate(params):
             pass
         return json.loads(x[:-1].decode())
