@@ -279,8 +279,8 @@ def generate_stream(
                     "logprobs": ret_logprobs,
                     "usage": {
                         "prompt_tokens": input_echo_len,
-                        "completion_tokens": i,
-                        "total_tokens": input_echo_len + i,
+                        "completion_tokens": i + 1,
+                        "total_tokens": input_echo_len + i + 1,
                     },
                     "finish_reason": None,
                 }
@@ -300,8 +300,8 @@ def generate_stream(
         "logprobs": ret_logprobs,
         "usage": {
             "prompt_tokens": input_echo_len,
-            "completion_tokens": i,
-            "total_tokens": input_echo_len + i,
+            "completion_tokens": i + 1,
+            "total_tokens": input_echo_len + i + 1,
         },
         "finish_reason": finish_reason,
     }
