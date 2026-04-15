@@ -286,6 +286,10 @@ def load_demo(url_params, request: gr.Request):
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
+    if state is None:
+        # clear_history resets state to None; a vote click before the UI
+        # updates would otherwise crash on state.dict() below.
+        return
     filename = get_conv_log_filename()
     if "llava" in model_selector:
         filename = filename.replace("2024", "vision-tmp-2024")
