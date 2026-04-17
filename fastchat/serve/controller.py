@@ -267,6 +267,7 @@ class Controller:
         worker_addr = self.get_worker_address(params["model"])
         if not worker_addr:
             yield self.handle_no_worker(params)
+            return
 
         try:
             response = requests.post(
