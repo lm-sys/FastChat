@@ -71,8 +71,6 @@ class Monitor:
         return self.model_call_limit_global[model]
 
     def update_model_call_limit(self, model: str, limit: int) -> bool:
-        if model not in self.model_call_limit_global:
-            return False
         self.model_call_limit_global[model] = limit
         return True
 
