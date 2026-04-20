@@ -42,6 +42,8 @@ def load_log_files(filename):
             break
         except FileNotFoundError:
             time.sleep(2)
+    else:
+        raise FileNotFoundError(f"Failed to open {filename} after 5 retries")
 
     for l in lines:
         row = json.loads(l)
