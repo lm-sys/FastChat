@@ -286,6 +286,8 @@ def load_demo(url_params, request: gr.Request):
 
 
 def vote_last_response(state, vote_type, model_selector, request: gr.Request):
+    if state is None:
+        return
     filename = get_conv_log_filename()
     if "llava" in model_selector:
         filename = filename.replace("2024", "vision-tmp-2024")
