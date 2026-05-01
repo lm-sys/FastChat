@@ -290,8 +290,11 @@ def train():
         trust_remote_code=model_args.trust_remote_code,
     )
 
-    if tokenizer.pad_token != tokenizer.unk_token:
-        tokenizer.pad_token = tokenizer.unk_token
+    if tokenizer.pad_token is None:
+        if tokenizer.unk_token is not None:
+            tokenizer.pad_token = tokenizer.unk_token
+        else:
+            tokenizer.pad_token = tokenizer.eos_token
 
     # Load data
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
