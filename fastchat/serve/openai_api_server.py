@@ -558,9 +558,6 @@ async def create_completion(request: CompletionRequest):
         if error_check_ret is not None:
             return error_check_ret
 
-        if isinstance(max_tokens, int) and max_tokens < request.max_tokens:
-            request.max_tokens = max_tokens
-
     if request.stream:
         generator = generate_completion_stream_generator(
             request, request.n, worker_addr
