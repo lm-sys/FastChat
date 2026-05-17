@@ -89,7 +89,7 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
                 max_tokens=max_tokens,
                 # extra_body={"guided_choice": GUIDED_CHOICES} if GUIDED_CHOICES else None,
             )
-            if not completion.choices:
+            if not completion.choices or completion.choices[0].message is None:
                 break
             output = completion.choices[0].message.content
             break
