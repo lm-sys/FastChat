@@ -64,6 +64,8 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
                 max_tokens=max_tokens,
                 # extra_body={"guided_choice": GUIDED_CHOICES} if GUIDED_CHOICES else None,
             )
+            if not completion.choices:
+                break
             output = completion.choices[0].message.content
             # print(output)
             break
@@ -114,6 +116,8 @@ def chat_completion_anthropic(model, messages, temperature, max_tokens, api_dict
                 temperature=temperature,
                 system=sys_msg,
             )
+            if not response.content:
+                break
             output = response.content[0].text
             break
         except anthropic.APIError as e:

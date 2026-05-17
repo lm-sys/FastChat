@@ -348,6 +348,8 @@ def openai_api_stream_iter(
                 max_tokens=max_new_tokens,
                 stream=False,
             )
+        if not res.choices:
+            return
         text = res.choices[0].message.content
         pos = 0
         while pos < len(text):
