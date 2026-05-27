@@ -45,16 +45,6 @@ def build_logger(logger_name, logger_filename):
             logging.basicConfig(level=logging.INFO)
     logging.getLogger().handlers[0].setFormatter(formatter)
 
-    # Redirect stdout and stderr to loggers
-    stdout_logger = logging.getLogger("stdout")
-    stdout_logger.setLevel(logging.INFO)
-    sl = StreamToLogger(stdout_logger, logging.INFO)
-    sys.stdout = sl
-
-    stderr_logger = logging.getLogger("stderr")
-    stderr_logger.setLevel(logging.ERROR)
-    sl = StreamToLogger(stderr_logger, logging.ERROR)
-    sys.stderr = sl
 
     # Get logger
     logger = logging.getLogger(logger_name)
