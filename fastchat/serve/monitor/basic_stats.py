@@ -36,6 +36,7 @@ def get_log_files(max_num_files=None):
 
 def load_log_files(filename):
     data = []
+    lines = []
     for retry in range(5):
         try:
             lines = open(filename).readlines()
