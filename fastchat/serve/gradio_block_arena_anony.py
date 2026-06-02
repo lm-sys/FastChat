@@ -190,7 +190,9 @@ SAMPLING_BOOST_MODELS = []
 OUTAGE_MODELS = []
 
 
-def get_sample_weight(model, outage_models, sampling_weights, sampling_boost_models=None):
+def get_sample_weight(
+    model, outage_models, sampling_weights, sampling_boost_models=None
+):
     if sampling_boost_models is None:
         sampling_boost_models = []
     if model in outage_models:
