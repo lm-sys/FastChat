@@ -166,9 +166,10 @@ async def check_length(request, prompt, max_tokens, worker_addr):
         {"model": request.model, "prompt": prompt},
         "count",
     )
-    length = min(max_tokens, context_len - token_num)
+    is_enc_dec = "t5" in request.model.lower()
+    length = min(max_tokens, context_len if is_enc_dec else context_len - token_num)
 
-    if length <= 0:
+    if (is_enc_dec and token_num > context_len) or length <= 0:
         return None, create_error_response(
             ErrorCode.CONTEXT_OVERFLOW,
             f"This model's maximum context length is {context_len} tokens. However, your messages resulted in {token_num} tokens. Please reduce the length of the messages.",
