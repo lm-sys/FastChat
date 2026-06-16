@@ -292,7 +292,9 @@ class Conversation:
                     ret += message + "<n>"
                 else:
                     ret += ""
-            ret = ret.rstrip("<n>") + seps[0]
+            if ret.endswith("<n>"):
+                ret = ret[: -len("<n>")]
+            ret = ret + seps[0]
             return ret
         elif self.sep_style == SeparatorStyle.GEMMA:
             ret = "<bos>"
