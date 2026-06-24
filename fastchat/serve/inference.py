@@ -94,7 +94,7 @@ def generate_stream(
     if model.config.is_encoder_decoder:
         max_src_len = context_len
     else:  # truncate
-        max_src_len = context_len - max_new_tokens - 1
+        max_src_len = context_len - max_new_tokens
 
     input_ids = input_ids[-max_src_len:]
     output_ids = list(input_ids)
