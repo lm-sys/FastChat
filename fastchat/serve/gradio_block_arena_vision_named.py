@@ -54,6 +54,7 @@ from fastchat.serve.gradio_web_server import (
     get_ip,
     get_model_description_md,
     enable_text,
+    CLEAR_HISTORY_CONFIRM_JS,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -492,6 +493,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         clear_history,
         None,
         states + chatbots + [multimodal_textbox, textbox, send_btn] + btn_list,
+        js=CLEAR_HISTORY_CONFIRM_JS,
     )
 
     share_js = """
