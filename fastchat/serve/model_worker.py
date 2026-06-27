@@ -333,7 +333,7 @@ def create_model_worker():
         help="Overwrite the random seed for each generation.",
     )
     parser.add_argument(
-        "--debug", type=bool, default=False, help="Print debugging messages"
+        "--debug", action="store_true", help="Print debugging messages"
     )
     parser.add_argument(
         "--ssl",
