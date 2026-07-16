@@ -928,7 +928,6 @@ def build_single_model_ui(models, add_promotion_links=False):
             height=650,
             show_copy_button=True,
             latex_delimiters=[
-                {"left": "$", "right": "$", "display": False},
                 {"left": "$$", "right": "$$", "display": True},
                 {"left": r"\(", "right": r"\)", "display": False},
                 {"left": r"\[", "right": r"\]", "display": True},
