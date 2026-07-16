@@ -401,13 +401,17 @@ def load_image(image_file):
         timeout = int(os.getenv("REQUEST_TIMEOUT", "3"))
         response = requests.get(image_file, timeout=timeout)
         image = Image.open(BytesIO(response.content))
-    elif image_file.lower().endswith(("png", "jpg", "jpeg", "webp", "gif")):
-        image = Image.open(image_file)
     elif image_file.startswith("data:"):
-        image_file = image_file.split(",")[1]
-        image = Image.open(BytesIO(base64.b64decode(image_file)))
+        image_file = image_file.split(",", 1)[1]
+        image = Image.open(BytesIO(base64.b64decode(image_file, validate=True)))
     else:
-        image = Image.open(BytesIO(base64.b64decode(image_file)))
+        # Reject filesystem paths (CWE-22); callers pass data URLs or raw base64.
+        try:
+            image = Image.open(BytesIO(base64.b64decode(image_file, validate=True)))
+        except Exception as e:
+            raise ValueError(
+                "load_image expects http(s), data URI, or base64; local paths are not allowed"
+            ) from e
 
     return image
 
