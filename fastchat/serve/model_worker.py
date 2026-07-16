@@ -130,17 +130,27 @@ class ModelWorker(BaseModelWorker):
                 if "logprobs" in output:
                     ret["logprobs"] = output["logprobs"]
                 yield json.dumps(ret).encode() + b"\0"
-        except torch.cuda.OutOfMemoryError as e:
-            ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
-            }
-            yield json.dumps(ret).encode() + b"\0"
-        except (ValueError, RuntimeError) as e:
+        except ValueError as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
+            yield json.dumps(ret).encode() + b"\0"
+        except RuntimeError as e:
+            # torch.cuda.OutOfMemoryError missing on older torch (e.g. 1.12)
+            if (
+                "out of memory" in str(e).lower()
+                or type(e).__name__ == "OutOfMemoryError"
+            ):
+                ret = {
+                    "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                    "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
+                }
+            else:
+                ret = {
+                    "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                    "error_code": ErrorCode.INTERNAL_ERROR,
+                }
             yield json.dumps(ret).encode() + b"\0"
 
     def generate_gate(self, params):
@@ -287,16 +297,26 @@ class ModelWorker(BaseModelWorker):
                 torch.xpu.empty_cache()
             if self.device == "npu":
                 torch.npu.empty_cache()
-        except torch.cuda.OutOfMemoryError as e:
-            ret = {
-                "text": f"{SERVER_ERROR_MSG}\n\n({e})",
-                "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
-            }
-        except (ValueError, RuntimeError) as e:
+        except ValueError as e:
             ret = {
                 "text": f"{SERVER_ERROR_MSG}\n\n({e})",
                 "error_code": ErrorCode.INTERNAL_ERROR,
             }
+        except RuntimeError as e:
+            # torch.cuda.OutOfMemoryError missing on older torch (e.g. 1.12)
+            if (
+                "out of memory" in str(e).lower()
+                or type(e).__name__ == "OutOfMemoryError"
+            ):
+                ret = {
+                    "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                    "error_code": ErrorCode.CUDA_OUT_OF_MEMORY,
+                }
+            else:
+                ret = {
+                    "text": f"{SERVER_ERROR_MSG}\n\n({e})",
+                    "error_code": ErrorCode.INTERNAL_ERROR,
+                }
         return ret
 
 
