@@ -47,7 +47,14 @@ controller_args = ["controller-host", "controller-port", "dispatch-method"]
 
 parser.add_argument("--worker-host", type=str, default="localhost")
 parser.add_argument("--worker-port", type=int, default=21002)
-# parser.add_argument("--worker-address", type=str, default="http://localhost:21002")
+parser.add_argument(
+    "--worker-address",
+    type=str,
+    default=None,
+    help="Address registered with the controller. "
+    "Defaults to http://{worker-host}:{worker-port}; "
+    "overridden per worker from --model-path-address.",
+)
 # parser.add_argument(
 #     "--controller-address", type=str, default="http://localhost:21001"
 # )
@@ -129,6 +136,7 @@ parser.add_argument("--no-register", action="store_true")
 worker_args = [
     "worker-host",
     "worker-port",
+    "worker-address",
     "model-path",
     "revision",
     "device",
@@ -242,6 +250,9 @@ def launch_worker(item):
     )
 
     args.model_path, args.worker_host, args.worker_port = item.split("@")
+    # model_worker registers with --worker-address independently of --host/--port.
+    # Keep them aligned so the controller can reach the worker on the custom port.
+    args.worker_address = f"http://{args.worker_host}:{args.worker_port}"
     print("*" * 80)
     worker_str_args = string_args(args, worker_args)
     print(worker_str_args)
