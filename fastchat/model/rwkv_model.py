@@ -19,9 +19,7 @@ class RwkvModel:
         self.config = SimpleNamespace(is_encoder_decoder=False)
         n = torch.cuda.device_count()
         strategy = (
-            " -> ".join(f"cuda:{i} fp16" for i in range(n))
-            if n > 1
-            else "cuda fp16"
+            " -> ".join(f"cuda:{i} fp16" for i in range(n)) if n > 1 else "cuda fp16"
         )
         self.model = RWKV(model=model_path, strategy=strategy)
 
