@@ -47,6 +47,14 @@ from fastchat.utils import (
 
 logger = build_logger("gradio_web_server", "gradio_web_server.log")
 
+CLEAR_HISTORY_CONFIRM_JS = """
+() => {
+    if (!confirm("Are you sure you want to clear your chat history?")) {
+        throw new Error("Clear history cancelled");
+    }
+}
+"""
+
 headers = {"User-Agent": "FastChat Client"}
 
 no_change_btn = gr.Button()
@@ -1000,7 +1008,12 @@ def build_single_model_ui(models, add_promotion_links=False):
         [state, temperature, top_p, max_output_tokens],
         [state, chatbot] + btn_list,
     )
-    clear_btn.click(clear_history, None, [state, chatbot, textbox] + btn_list)
+    clear_btn.click(
+        clear_history,
+        None,
+        [state, chatbot, textbox] + btn_list,
+        js=CLEAR_HISTORY_CONFIRM_JS,
+    )
 
     model_selector.change(clear_history, None, [state, chatbot, textbox] + btn_list)
 

@@ -28,6 +28,7 @@ from fastchat.serve.gradio_web_server import (
     acknowledgment_md,
     get_ip,
     get_model_description_md,
+    CLEAR_HISTORY_CONFIRM_JS,
 )
 from fastchat.serve.remote_logger import get_remote_logger
 from fastchat.utils import (
@@ -457,7 +458,12 @@ def build_side_by_side_ui_named(models):
     ).then(
         flash_buttons, [], btn_list
     )
-    clear_btn.click(clear_history, None, states + chatbots + [textbox] + btn_list)
+    clear_btn.click(
+        clear_history,
+        None,
+        states + chatbots + [textbox] + btn_list,
+        js=CLEAR_HISTORY_CONFIRM_JS,
+    )
 
     share_js = """
 function (a, b, c, d) {

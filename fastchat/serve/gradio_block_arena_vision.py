@@ -38,6 +38,7 @@ from fastchat.serve.gradio_web_server import (
     State,
     get_conv_log_filename,
     get_remote_logger,
+    CLEAR_HISTORY_CONFIRM_JS,
 )
 from fastchat.serve.vision.image import ImageFormat, Image
 from fastchat.utils import (
@@ -451,6 +452,7 @@ Note: You can only chat with <span style='color: #DE3163; font-weight: bold'>one
         clear_history,
         None,
         [state, chatbot, multimodal_textbox, textbox, send_btn] + btn_list,
+        js=CLEAR_HISTORY_CONFIRM_JS,
     )
 
     model_selector.change(
