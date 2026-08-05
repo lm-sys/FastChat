@@ -140,13 +140,13 @@ class SGLWorker(BaseModelWorker):
         async for out, meta_info in state.text_async_iter(
             var_name="response", return_meta_data=True
         ):
-            partial_stop = any(is_partial_stop(out, i) for i in stop)
+            entire_output += out
+            partial_stop = any(is_partial_stop(entire_output, i) for i in stop)
 
             # prevent yielding partial stop sequence
             if partial_stop:
                 continue
 
-            entire_output += out
             prompt_tokens = meta_info["prompt_tokens"]
             completion_tokens = meta_info["completion_tokens"]
 
