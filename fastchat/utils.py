@@ -391,6 +391,32 @@ def str_to_torch_dtype(dtype: str):
         raise ValueError(f"Unrecognized dtype: {dtype}")
 
 
+import ipaddress
+import socket
+from urllib.parse import urlparse
+
+
+def _is_safe_http_url(url: str) -> bool:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return False
+    try:
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        for _, _, _, _, sockaddr in socket.getaddrinfo(parsed.hostname, port):
+            ip = ipaddress.ip_address(sockaddr[0])
+            if (
+                ip.is_private
+                or ip.is_loopback
+                or ip.is_link_local
+                or ip.is_reserved
+                or ip.is_multicast
+            ):
+                return False
+    except socket.gaierror:
+        return False
+    return True
+
+
 def load_image(image_file):
     from PIL import Image
     import requests
@@ -398,16 +424,18 @@ def load_image(image_file):
     image = None
 
     if image_file.startswith("http://") or image_file.startswith("https://"):
+        if not _is_safe_http_url(image_file):
+            raise ValueError("Refusing to fetch image from internal or private URL")
         timeout = int(os.getenv("REQUEST_TIMEOUT", "3"))
         response = requests.get(image_file, timeout=timeout)
         image = Image.open(BytesIO(response.content))
     elif image_file.lower().endswith(("png", "jpg", "jpeg", "webp", "gif")):
         image = Image.open(image_file)
     elif image_file.startswith("data:"):
-        image_file = image_file.split(",")[1]
-        image = Image.open(BytesIO(base64.b64decode(image_file)))
+        image_file = image_file.split(",", 1)[1]
+        image = Image.open(BytesIO(base64.b64decode(image_file, validate=True)))
     else:
-        image = Image.open(BytesIO(base64.b64decode(image_file)))
+        image = Image.open(BytesIO(base64.b64decode(image_file, validate=True)))
 
     return image
 
