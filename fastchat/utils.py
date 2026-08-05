@@ -52,7 +52,7 @@ def build_logger(logger_name, logger_filename):
     sys.stdout = sl
 
     stderr_logger = logging.getLogger("stderr")
-    stderr_logger.setLevel(logging.ERROR)
+    stderr_logger.setLevel(logging.DEBUG)
     sl = StreamToLogger(stderr_logger, logging.ERROR)
     sys.stderr = sl
 
@@ -106,15 +106,31 @@ class StreamToLogger(object):
             # translates them so this is still cross platform.
             if line[-1] == "\n":
                 encoded_message = line.encode("utf-8", "ignore").decode("utf-8")
-                self.logger.log(self.log_level, encoded_message.rstrip())
+                level = infer_stream_log_level(encoded_message, self.log_level)
+                self.logger.log(level, encoded_message.rstrip())
             else:
                 self.linebuf += line
 
     def flush(self):
         if self.linebuf != "":
             encoded_message = self.linebuf.encode("utf-8", "ignore").decode("utf-8")
-            self.logger.log(self.log_level, encoded_message.rstrip())
+            level = infer_stream_log_level(encoded_message, self.log_level)
+            self.logger.log(level, encoded_message.rstrip())
         self.linebuf = ""
+
+
+def infer_stream_log_level(line: str, default: int) -> int:
+    """Map uvicorn-style stderr prefixes to the correct log level."""
+    stripped = line.lstrip()
+    if stripped.startswith("INFO:"):
+        return logging.INFO
+    if stripped.startswith("WARNING:") or stripped.startswith("WARN:"):
+        return logging.WARNING
+    if stripped.startswith("ERROR:") or stripped.startswith("CRITICAL:"):
+        return logging.ERROR
+    if stripped.startswith("DEBUG:"):
+        return logging.DEBUG
+    return default
 
 
 def disable_torch_init():
