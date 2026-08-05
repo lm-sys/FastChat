@@ -433,7 +433,6 @@ def build_side_by_side_vision_ui_anony(context: Context, random_questions=None):
                                 height=650,
                                 show_copy_button=True,
                                 latex_delimiters=[
-                                    {"left": "$", "right": "$", "display": False},
                                     {"left": "$$", "right": "$$", "display": True},
                                     {"left": r"\(", "right": r"\)", "display": False},
                                     {"left": r"\[", "right": r"\]", "display": True},
