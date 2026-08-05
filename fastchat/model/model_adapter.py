@@ -781,7 +781,8 @@ class LongChatAdapter(BaseModelAdapter):
 
         # Apply monkey patch, TODO(Dacheng): Add flash attention support
         config = AutoConfig.from_pretrained(model_path, revision=revision)
-        replace_llama_with_condense(config.rope_scaling["factor"])
+        rope_scaling = getattr(config, "rope_scaling", None) or {}
+        replace_llama_with_condense(rope_scaling.get("factor", 1))
 
         tokenizer = AutoTokenizer.from_pretrained(
             model_path, use_fast=self.use_fast_tokenizer, revision=revision
