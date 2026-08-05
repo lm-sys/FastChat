@@ -173,12 +173,12 @@ def run_judge_single(question, answer, judge, ref_answer, multi_turn=False):
         raise ValueError(f"Invalid judge model name: {model}")
 
     if judge.prompt_template["output_format"] == "[[rating]]":
-        match = re.search(one_score_pattern, judgment)
-        if not match:
-            match = re.search(one_score_pattern_backup, judgment)
+        matches = re.findall(one_score_pattern, judgment)
+        if not matches:
+            matches = re.findall(one_score_pattern_backup, judgment)
 
-        if match:
-            rating = ast.literal_eval(match.groups()[0])
+        if matches:
+            rating = ast.literal_eval(matches[-1])
         else:
             rating = -1
     else:
@@ -280,20 +280,20 @@ def run_judge_pair(question, answer_a, answer_b, judge, ref_answer, multi_turn=F
         raise ValueError(f"Invalid judge model name: {model}")
 
     if judge.prompt_template["output_format"] == "[[A]]":
-        if "[[A]]" in judgment:
-            winner = "A"
-        elif "[[B]]" in judgment:
-            winner = "B"
-        elif "[[C]]" in judgment:
-            winner = "tie"
+        # Use findall and take the last match so that a verdict token echoed
+        # in reasoning does not override the judge's final verdict.
+        pairwise_matches = re.findall(r"\[\[([ABC])\]\]", judgment.upper())
+        if pairwise_matches:
+            verdict = pairwise_matches[-1]
+            winner = {"A": "A", "B": "B", "C": "tie"}.get(verdict, "error")
         else:
             winner = "error"
     elif judge.prompt_template["output_format"] == "[[rating_a,rating_b]]":
-        match = re.search(two_score_pattern, judgment)
-        if not match:
-            match = re.search(two_score_pattern_backup, judgment)
-        if match:
-            scores = [ast.literal_eval(s.strip()) for s in match.groups()]
+        matches = re.findall(two_score_pattern, judgment)
+        if not matches:
+            matches = re.findall(two_score_pattern_backup, judgment)
+        if matches:
+            scores = [ast.literal_eval(s.strip()) for s in matches[-1]]
             if abs(scores[0] - scores[1]) <= TIE_DELTA:
                 winner = "tie"
             elif scores[0] > scores[1]:
