@@ -17,9 +17,8 @@ class RwkvModel:
             "Experimental support. Please use ChatRWKV if you want to chat with RWKV"
         )
         self.config = SimpleNamespace(is_encoder_decoder=False)
-        self.model = RWKV(model=model_path, strategy="cuda fp16")
-        # two GPUs
-        # self.model = RWKV(model=model_path, strategy="cuda:0 fp16 *20 -> cuda:1 fp16")
+        strategy = os.environ.get("RWKV_STRATEGY", "cuda fp16")
+        self.model = RWKV(model=model_path, strategy=strategy)
 
         self.tokenizer = None
         self.model_path = model_path
