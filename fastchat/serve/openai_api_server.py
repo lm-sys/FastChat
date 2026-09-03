@@ -20,7 +20,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
-import httpx
+
+try:
+    import httpx2 as httpx
+except ModuleNotFoundError:
+    import httpx
 
 from pydantic_settings import BaseSettings
 import shortuuid
