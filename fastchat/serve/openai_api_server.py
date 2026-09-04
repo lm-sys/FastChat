@@ -20,7 +20,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
-import httpx
+
+import httpx2
 
 from pydantic_settings import BaseSettings
 import shortuuid
@@ -679,7 +680,7 @@ async def generate_completion_stream_generator(
 
 async def generate_completion_stream(payload: Dict[str, Any], worker_addr: str):
     controller_address = app_settings.controller_address
-    async with httpx.AsyncClient() as client:
+    async with httpx2.AsyncClient() as client:
         delimiter = b"\0"
         async with client.stream(
             "POST",
