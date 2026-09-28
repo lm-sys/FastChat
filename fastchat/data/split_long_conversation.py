@@ -48,6 +48,8 @@ def split_one_sample(sample):
             new_samples.append(make_sample(sample, start_idx, i))
             start_idx = i
             cur_len = 0
+            if i == len(conversations) - 2 and tmp_len <= max_length:
+                new_samples.append(make_sample(sample, start_idx, i + 2))
         elif i == len(conversations) - 2:
             new_samples.append(make_sample(sample, start_idx, i + 2))
 
