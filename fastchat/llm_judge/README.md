@@ -53,6 +53,10 @@ python gen_model_answer.py --model-path lmsys/vicuna-7b-v1.5 --model-id vicuna-7
 ```
 The answers will be saved to `data/mt_bench/model_answer/[MODEL-ID].jsonl`.
 
+Both `gen_model_answer.py` and `gen_api_answer.py` accept `--answer-file` to override this path.
+For example, `--answer-file answers.jsonl` writes to the current directory, while
+`--answer-file results/answers.jsonl` creates the parent directory if needed.
+
 To make sure FastChat loads the correct prompt template, see the supported models and how to add a new model [here](../../docs/model_support.md#how-to-support-a-new-model).
 
 You can also specify `--num-gpus-per-model` for model parallelism (needed for large 65B models) and `--num-gpus-total` to parallelize answer generation with multiple GPUs.

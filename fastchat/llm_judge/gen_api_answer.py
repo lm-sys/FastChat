@@ -72,7 +72,7 @@ def get_answer(
         "tstamp": time.time(),
     }
 
-    os.makedirs(os.path.dirname(answer_file), exist_ok=True)
+    os.makedirs(os.path.dirname(answer_file) or ".", exist_ok=True)
     with open(answer_file, "a") as fout:
         fout.write(json.dumps(ans) + "\n")
 
