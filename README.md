@@ -1,6 +1,10 @@
 # FastChat
 | [**Demo**](https://lmarena.ai/) | [**Discord**](https://discord.gg/6GXcFg3TH8) | [**X**](https://x.com/lmsysorg) |
 
+<p align="center">
+  <b>English</b> · <a href="README.zh.md">简体中文</a>
+</p>
+
 FastChat is an open platform for training, serving, and evaluating large language model based chatbots.
 - FastChat powers Chatbot Arena ([lmarena.ai](https://lmarena.ai)), serving over 10 million chat requests for 70+ LLMs.
 - Chatbot Arena has collected over 1.5M human votes from side-by-side LLM battles to compile an online [LLM Elo leaderboard](https://lmarena.ai/?leaderboard).
