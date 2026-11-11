@@ -28,3 +28,9 @@ jobs:
     - name: Check formatting
       run: |
         black --check .
+    - name: Install judge dependencies
+      run: |
+        python -m pip install -e '.[model_worker,llm_judge]'
+    - name: Test judge API error handling
+      run: |
+        python -m pytest -q tests/test_llm_judge_api_errors.py
