@@ -9,11 +9,12 @@ import json
 import os
 import re
 import time
-from typing import Optional
+from typing import Dict, Optional
 
 import openai
 import anthropic
 
+from fastchat.conversation import Conversation
 from fastchat.model.model_adapter import (
     get_conversation_template,
     ANTHROPIC_MODEL_LIST,
@@ -404,7 +405,13 @@ def play_a_match_pair(match: MatchPair, output_file: str):
     return result
 
 
-def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
+def chat_completion_openai(
+    model: str,
+    conv: Conversation,
+    temperature: float,
+    max_tokens: int,
+    api_dict: Optional[Dict[str, str]] = None,
+) -> str:
     if api_dict is not None:
         openai.api_base = api_dict["api_base"]
         openai.api_key = api_dict["api_key"]
@@ -421,6 +428,8 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
             )
             output = response["choices"][0]["message"]["content"]
             break
+        except openai.error.InvalidRequestError:
+            raise
         except openai.error.OpenAIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
@@ -428,7 +437,13 @@ def chat_completion_openai(model, conv, temperature, max_tokens, api_dict=None):
     return output
 
 
-def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=None):
+def chat_completion_openai_azure(
+    model: str,
+    conv: Conversation,
+    temperature: float,
+    max_tokens: int,
+    api_dict: Optional[Dict[str, str]] = None,
+) -> str:
     openai.api_type = "azure"
     openai.api_version = "2023-07-01-preview"
     if api_dict is not None:
@@ -454,12 +469,11 @@ def chat_completion_openai_azure(model, conv, temperature, max_tokens, api_dict=
             )
             output = response["choices"][0]["message"]["content"]
             break
+        except openai.error.InvalidRequestError:
+            raise
         except openai.error.OpenAIError as e:
             print(type(e), e)
             time.sleep(API_RETRY_SLEEP)
-        except openai.error.InvalidRequestError as e:
-            print(type(e), e)
-            break
         except KeyError:
             print(response)
             break
