@@ -320,6 +320,7 @@ def openai_api_stream_iter(
             model=model_name,
             messages=messages,
             temperature=temperature,
+            top_p=top_p,
             max_tokens=max_new_tokens,
             stream=True,
         )
@@ -345,6 +346,7 @@ def openai_api_stream_iter(
                 model=model_name,
                 messages=messages,
                 temperature=temperature,
+                top_p=top_p,
                 max_tokens=max_new_tokens,
                 stream=False,
             )
