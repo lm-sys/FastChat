@@ -168,7 +168,7 @@ class Conversation:
             else:
                 ret += ""
             for i, (role, message) in enumerate(self.messages):
-                if message:
+                if message is not None:
                     ret += f"<|start_header_id|>{role}<|end_header_id|>\n\n"
                     ret += f"{message.strip()}<|eot_id|>"
                 else:
