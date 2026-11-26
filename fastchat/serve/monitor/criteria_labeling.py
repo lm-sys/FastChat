@@ -106,7 +106,7 @@ def chat_completion_openai(model, messages, temperature, max_tokens, api_dict=No
             print(messages)
             print(type(e), e)
             time.sleep(1)
-        except KeyError:
+        except KeyError as e:
             print(type(e), e)
             break
 
